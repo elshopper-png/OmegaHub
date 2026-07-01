@@ -1,14 +1,17 @@
 // =======================================
 // OMEGA HUB
-// REDIRECCIÓN AUTOMÁTICA
+// REDIRECCIÓN INTELIGENTE
 // =======================================
 
-const destino =
-"https://bodaalexyluzdy.my.canva.site/cat-logo";
+const params = new URLSearchParams(window.location.search);
 
-// Espera 2 segundos y redirige al catálogo
+const destinos = {
+    kuya: "https://bodaalexyluzdy.my.canva.site/cat-logo"
+};
+
+const cliente = params.get("cliente") || "kuya";
+const destino = params.get("destino") || destinos[cliente] || destinos.kuya;
+
 setTimeout(() => {
-
     window.location.href = destino;
-
-}, 2000);
+}, 1200);
