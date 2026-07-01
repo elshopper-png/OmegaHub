@@ -14,4 +14,4 @@ const destino = params.get("destino") || destinos[cliente] || destinos.kuya;
 
 setTimeout(() => {
     window.location.href = destino;
-}, 10000);
+}, 300);
