@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmegaHub Analytics</title>
+
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+
+  <main class="dashboard">
+    <header class="topbar">
+      <div>
+        <h1>OmegaHub Analytics</h1>
+        <p>Inteligencia comercial para El Shopper y anunciantes</p>
+      </div>
+      <span id="estado">Conectando...</span>
+    </header>
+
+    <section class="cards">
+      <div class="card">
+        <p>Visitas de hoy</p>
+        <h2 id="hoy">0</h2>
+      </div>
+      <div class="card">
+        <p>Visitas de ayer</p>
+        <h2 id="ayer">0</h2>
+      </div>
+      <div class="card">
+        <p>Últimos 7 días</p>
+        <h2 id="semana">0</h2>
+      </div>
+      <div class="card">
+        <p>Total visitas</p>
+        <h2 id="total">0</h2>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel"><h3>Por cliente</h3><div id="clientes"></div></div>
+      <div class="panel"><h3>Por campaña</h3><div id="campanas"></div></div>
+      <div class="panel"><h3>Por origen</h3><div id="origenes"></div></div>
+      <div class="panel"><h3>Por dispositivo</h3><div id="dispositivos"></div></div>
+      <div class="panel"><h3>Por navegador</h3><div id="navegadores"></div></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
