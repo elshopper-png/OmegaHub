@@ -44,11 +44,30 @@ function contarPorCampo(data, campo) {
     const resultado = {};
 
     data.forEach(item => {
-        const valor = item[campo] || "Sin dato";
+        let valor = item[campo] || "Sin dato";
+
+        if (campo === "origen") {
+            valor = normalizarOrigen(valor);
+        }
+
         resultado[valor] = (resultado[valor] || 0) + 1;
     });
 
     return resultado;
+}
+
+function normalizarOrigen(valor) {
+    console.log("Normalizando origen:", valor);
+
+    const texto = String(valor).toLowerCase();
+
+    if (texto.includes("tiktok")) return "tiktok";
+    if (texto.includes("facebook")) return "facebook";
+    if (texto.includes("instagram")) return "instagram";
+    if (texto.includes("whatsapp")) return "whatsapp";
+    if (texto.includes("google")) return "google";
+
+    return valor;
 }
 
 function pintarGrupo(id, datos) {
