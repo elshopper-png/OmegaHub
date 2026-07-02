@@ -39,9 +39,10 @@ async function registrarVisita() {
         "sin_campania";
 
     const origen =
-        params.get("src") ||
-        params.get("utm_source") ||
-        "directo";
+    params.get("origen") ||
+    params.get("src") ||
+    params.get("utm_source") ||
+    "directo";
 
     const destino =
         params.get("destino") ||

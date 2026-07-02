@@ -1,17 +1,15 @@
-// =======================================
-// OMEGA HUB
-// REDIRECCIÓN INTELIGENTE
-// =======================================
+const destinos = {
+  kuya: "https://bodaalexyluzdy.my.canva.site/cat-logo"
+};
 
 const params = new URLSearchParams(window.location.search);
 
-const destinos = {
-    kuya: "https://bodaalexyluzdy.my.canva.site/cat-logo"
-};
+const cliente = params.get("cliente") || "sin_cliente";
+const campania = params.get("campania") || "sin_campania";
+const origen = params.get("origen") || "directo";
 
-const cliente = params.get("cliente") || "kuya";
-const destino = params.get("destino") || destinos[cliente] || destinos.kuya;
+const destino = params.get("destino") || destinos[cliente];
 
 setTimeout(() => {
-    window.location.href = destino;
+  window.location.href = destino;
 }, 300);
