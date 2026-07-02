@@ -3,12 +3,10 @@
 // ===============================
 
 function obtenerIdCampania() {
-    const path = window.location.pathname.replace("/", "").trim();
     const params = new URLSearchParams(window.location.search);
 
     return (
         params.get("id") ||
-        path ||
         "directo"
     );
 }
@@ -23,11 +21,7 @@ function obtenerCampania() {
         };
     }
 
-    return {
-        id: id,
-        cliente: "sin_cliente",
-        campania: "sin_campania",
-        origen: "directo",
-        destino: "https://bodaalexyluzdy.my.canva.site/cat-logo"
-    };
+    console.warn("Campaña no encontrada:", id);
+
+    return null;
 }
