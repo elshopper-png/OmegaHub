@@ -19,21 +19,21 @@
     </header>
 
     <section class="cards">
-      <div class="card">
-        <p>Visitas de hoy</p>
-        <h2 id="hoy">0</h2>
+      <div class="card"><p>Visitas de hoy</p><h2 id="hoy">0</h2></div>
+      <div class="card"><p>Visitas de ayer</p><h2 id="ayer">0</h2></div>
+      <div class="card"><p>Últimos 7 días</p><h2 id="semana">0</h2></div>
+      <div class="card"><p>Total visitas</p><h2 id="total">0</h2></div>
+    </section>
+
+    <section class="charts">
+      <div class="panel">
+        <h3>Visitas por origen</h3>
+        <canvas id="chartOrigen"></canvas>
       </div>
-      <div class="card">
-        <p>Visitas de ayer</p>
-        <h2 id="ayer">0</h2>
-      </div>
-      <div class="card">
-        <p>Últimos 7 días</p>
-        <h2 id="semana">0</h2>
-      </div>
-      <div class="card">
-        <p>Total visitas</p>
-        <h2 id="total">0</h2>
+
+      <div class="panel">
+        <h3>Visitas por dispositivo</h3>
+        <canvas id="chartDispositivo"></canvas>
       </div>
     </section>
 
@@ -46,6 +46,7 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script src="dashboard.js"></script>
