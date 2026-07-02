@@ -1,15 +1,11 @@
-const destinos = {
-  kuya: "https://bodaalexyluzdy.my.canva.site/cat-logo"
-};
+const campania = obtenerCampania();
 
-const params = new URLSearchParams(window.location.search);
+console.log("Campaña detectada:", campania);
 
-const cliente = params.get("cliente") || "sin_cliente";
-const campania = params.get("campania") || "sin_campania";
-const origen = params.get("origen") || "directo";
-
-const destino = params.get("destino") || destinos[cliente];
-
-setTimeout(() => {
-  window.location.href = destino;
-}, 300);
+if (campania && campania.destino) {
+  setTimeout(() => {
+    window.location.href = campania.destino;
+  }, 300);
+} else {
+  console.error("No se encontró destino para esta campaña");
+}

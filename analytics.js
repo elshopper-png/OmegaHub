@@ -38,11 +38,23 @@ async function registrarVisita() {
         params.get("utm_campaign") ||
         "sin_campania";
 
-    const origen =
+    let origen =
     params.get("origen") ||
     params.get("src") ||
     params.get("utm_source") ||
     "directo";
+
+if (origen.includes("tiktok")) {
+    origen = "tiktok";
+}
+
+if (origen.includes("facebook")) {
+    origen = "facebook";
+}
+
+if (origen.includes("instagram")) {
+    origen = "instagram";
+}
 
     const destino =
         params.get("destino") ||
