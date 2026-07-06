@@ -3,8 +3,8 @@ const CAMPANIAS = {
     cliente: "kuya",
     campania: "catalogo_julio",
     origen: "tiktok",
-    destino: "https://bodaalexyluzdy.my.canva.site/cat-logo"
-  },
+    destino: "https://www.tiktok.com/@joyeriakuyaperu"
+},
 
   "facebook-kuya": {
     cliente: "kuya",
@@ -13,10 +13,18 @@ const CAMPANIAS = {
     destino: "https://www.facebook.com/perukuya/"
 },
 
-  "instagram-kuya": {
+"youtube-kuya": {
+    cliente: "kuya",
+    campania: "catalogo_julio",
+    origen: "youtube",
+    destino: "https://www.youtube.com/@KuyaPeruSilver"
+},
+
+"instagram-kuya": {
     cliente: "kuya",
     campania: "catalogo_julio",
     origen: "instagram",
-    destino: "https://bodaalexyluzdy.my.canva.site/cat-logo"
-  }
+    destino: "https://www.instagram.com/kuyaperujoyeria/"
+},
+
 };
