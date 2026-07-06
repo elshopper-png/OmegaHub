@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>El Shopper | OmegaHub</title>
+  <link rel="stylesheet" href="dashboard2.css" />
+</head>
+
+<body>
+  <main class="dashboard">
+
+    <header class="executive-hero">
+      <div class="brand-mark">
+        <img src="./motor/logo-shopper.png" alt="El Shopper" />
+        <div>
+          <span>Powered by</span>
+          <strong>El Shopper | OmegaHub</strong>
+        </div>
+      </div>
+
+      <div class="client-hero">
+        <p>Centro de Inteligencia Comercial</p>
+        <h1 id="nombreClienteHeader">Joyerías Kuya</h1>
+        <span>Mide. Decide. Crece.</span>
+      </div>
+
+      <div class="system-status">
+        <strong id="fechaHoy">--/--/----</strong>
+        <span id="horaPeru">--:--:--</span>
+        <small id="estado">Conectando...</small>
+
+        <label class="cliente-selector">
+          Cliente
+          <select id="selectorCliente">
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+      </div>
+    </header>
+
+    <section class="kpis">
+      <article class="kpi kpi-blue">
+        <p>Visitas totales</p>
+        <h2 id="totalVisitas">0</h2>
+        <span id="detalleTotal">Desde el inicio de medición</span>
+      </article>
+
+      <article class="kpi kpi-green">
+        <p>Visitas hoy</p>
+        <h2 id="visitasHoy">0</h2>
+        <span id="detalleHoy">Todas tus redes hoy</span>
+      </article>
+
+    
+
+    
+    </section>
+
+    <section class="panel command-panel">
+      <div class="section-head">
+
+    <h3>RENDIMIENTO POR CANAL</h3>
+
+    <p class="graficoSubtitulo">
+        Orgánico + Pauta
+    </p>
+
+</div>
+
+      <canvas id="chartOrigen"></canvas>
+    </section>
+
+    <section class="insight-grid">
+      <article class="panel insight-card">
+        <p>Última visita</p>
+        <h3 id="ultimaVisitaTiempo">Sin registro</h3>
+        <span id="ultimaVisitaDetalle">Esperando actividad</span>
+      </article>
+
+      <article class="panel insight-card">
+        <p>Ahora mismo</p>
+        <h3 id="visitasEnVivo">0 personas</h3>
+        <span><b class="dot"></b> Últimos 5 minutos</span>
+      </article>
+
+      <article class="panel insight-card executive-note">
+        <p>Lo que debes saber hoy</p>
+        <h3 id="insightPrincipal">TikTok concentra el mayor movimiento.</h3>
+        <span>OmegaHub convierte tus datos en señales simples para decidir mejor.</span>
+      </article>
+    </section>
+
+    <section class="grid-charts">
+      <article class="panel">
+        <h3>Procedencia del tráfico</h3>
+        <canvas id="chartDispositivo"></canvas>
+      </article>
+
+      <article class="panel">
+        <h3>Visitas por día</h3>
+        <canvas id="chartDias"></canvas>
+      </article>
+
+      <article class="panel wide">
+        <h3>Detalle por canal</h3>
+        <div id="ecosistema" class="ecosistema-grid"></div>
+      </article>
+
+      <article class="panel wide">
+        <h3>Resumen general</h3>
+        <canvas id="chartClientes"></canvas>
+      </article>
+    </section>
+
+    <footer class="footer">
+      El Shopper | OmegaHub · Datos actualizados en tiempo real
+    </footer>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="supabase.js"></script>
+  <script src="./motor/activos/activos.js"></script>
+  <script src="./motor/activos/ActivoDigital.js"></script>
+  <script src="./database/adapters.js"></script>
+  <script src="dashboard2.js"></script>
+</body>
+</html>

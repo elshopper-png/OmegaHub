@@ -10,8 +10,8 @@ const CAMPANIAS = {
     cliente: "kuya",
     campania: "catalogo_julio",
     origen: "facebook",
-    destino: "https://bodaalexyluzdy.my.canva.site/cat-logo"
-  },
+    destino: "https://www.facebook.com/perukuya/"
+},
 
   "instagram-kuya": {
     cliente: "kuya",
