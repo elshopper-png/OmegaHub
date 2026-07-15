@@ -49,6 +49,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="box">
@@ -66,16 +67,28 @@
 
   <script>
     async function iniciarMotor() {
+      console.log("1. Inicia motor");
+
       const campania = obtenerCampania();
+      console.log("2. Campaña encontrada:", campania);
 
       if (!campania) {
+        console.log("3. Campaña no encontrada");
+
         document.querySelector("h1").textContent = "Campaña no encontrada";
         document.querySelector("p").textContent = "Verifica el enlace de acceso.";
         return;
       }
 
+      console.log("4. Antes de registrar");
+
       await registrarCampania(campania);
+
+      console.log("5. Registro terminado");
+
       redirigirCampania(campania);
+
+      console.log("6. Redirección solicitada");
     }
 
     iniciarMotor();
