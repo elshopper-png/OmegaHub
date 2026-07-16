@@ -7,9 +7,39 @@ console.log("🚀 OmegaHub Picapiedra 2.0 iniciado");
 
 const supabaseClient = window.supabaseClient;
 
+// ============================================================
+// MODO DE ACCESO AL DASHBOARD
+// ============================================================
+
+const PARAMETROS_DASHBOARD =
+  new URLSearchParams(window.location.search);
+
+const CLIENTE_SOLICITADO = String(
+  PARAMETROS_DASHBOARD.get("cliente") || ""
+).trim().toLowerCase();
+
+const VISTA_MAESTRA =
+  PARAMETROS_DASHBOARD.get("vista") === "maestra";
+
+const CLIENTES_CONFIG = {
+  shopper: {
+    nombre: "Shopper Digital"
+  }
+};
+
+const CLIENTE_VALIDO =
+  Boolean(CLIENTES_CONFIG[CLIENTE_SOLICITADO]);
+
 const OmegaHub = {
   visitas: [],
-  clienteActivo: "todos",
+
+  clienteActivo: CLIENTE_VALIDO
+    ? CLIENTE_SOLICITADO
+    : "todos",
+
+  modoCliente: CLIENTE_VALIDO,
+  vistaMaestra: VISTA_MAESTRA,
+
   chartDias: null,
   refrescoMs: 60000
 };
@@ -149,10 +179,19 @@ async function cargarDatos() {
 
   setEstado("Conectando...", "cargando");
 
-  const { data, error } = await supabaseClient
+  let consulta = supabaseClient
     .from("visitas")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (OmegaHub.modoCliente) {
+    consulta = consulta.eq(
+      "cliente",
+      OmegaHub.clienteActivo
+    );
+  }
+
+  const { data, error } = await consulta;
 
   if (error) {
     console.error("Error cargando visitas:", error);
@@ -202,28 +241,58 @@ function renderFechaHora() {
 
 function renderSelectorClientes() {
   const selector = $("selectorCliente");
+
+  if (OmegaHub.modoCliente) {
+    const contenedor =
+      selector?.closest(".cliente-selector");
+
+    if (contenedor) {
+      contenedor.style.display = "none";
+    }
+
+    return;
+  }
+
   if (!selector) return;
 
-  const clientes = [...new Set(
-    OmegaHub.visitas.map(visita => visita.cliente).filter(Boolean)
-  )].sort();
+  const clientes = [
+    ...new Set(
+      OmegaHub.visitas
+        .map(visita => visita.cliente)
+        .filter(Boolean)
+    )
+  ].sort();
 
-  const valorActual = OmegaHub.clienteActivo;
-
-  selector.innerHTML = `<option value="todos">Todos</option>`;
+  selector.innerHTML =
+    `<option value="todos">Todos</option>`;
 
   clientes.forEach(cliente => {
-    const option = document.createElement("option");
+    const option =
+      document.createElement("option");
+
     option.value = cliente;
-    option.textContent = cliente.replaceAll("-", " ").replace(/\b\w/g, letra => letra.toUpperCase());
+
+    option.textContent = cliente
+      .replaceAll("-", " ")
+      .replace(/\b\w/g, letra =>
+        letra.toUpperCase()
+      );
+
     selector.appendChild(option);
   });
 
-  selector.value = clientes.includes(valorActual) ? valorActual : "todos";
-  OmegaHub.clienteActivo = selector.value;
+  selector.value =
+    clientes.includes(OmegaHub.clienteActivo)
+      ? OmegaHub.clienteActivo
+      : "todos";
+
+  OmegaHub.clienteActivo =
+    selector.value;
 
   selector.onchange = () => {
-    OmegaHub.clienteActivo = selector.value;
+    OmegaHub.clienteActivo =
+      selector.value;
+
     renderHeaderCliente();
     renderKPIs();
     renderGraficoDias();
@@ -234,8 +303,27 @@ function renderSelectorClientes() {
 }
 
 function renderHeaderCliente() {
+  if (OmegaHub.modoCliente) {
+    const configuracion =
+      CLIENTES_CONFIG[OmegaHub.clienteActivo];
+
+    setText(
+      "nombreClienteHeader",
+      configuracion?.nombre || "Cliente"
+    );
+
+    document.title =
+      `${configuracion?.nombre || "Cliente"} | Picapiedra`;
+
+    return;
+  }
+
   if (OmegaHub.clienteActivo === "todos") {
-    setText("nombreClienteHeader", "Todos los clientes");
+    setText(
+      "nombreClienteHeader",
+      "Todos los clientes"
+    );
+
     return;
   }
 
