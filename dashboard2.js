@@ -45,14 +45,27 @@ const OmegaHub = {
 };
 
 const CANALES = {
+  meta: { nombre: "Meta", color: "#5B5BD6" },
+
   facebook: { nombre: "Facebook", color: "#1877F2" },
+
   instagram: { nombre: "Instagram", color: "#E1306C" },
+
   tiktok: { nombre: "TikTok", color: "#94A3B8" },
+
   youtube: { nombre: "YouTube", color: "#FF0000" },
+
   whatsapp: { nombre: "WhatsApp", color: "#25D366" },
+
   google: { nombre: "Google", color: "#4285F4" },
+
+  linktree: { nombre: "Linktree", color: "#43E660" },
+
+  qr: { nombre: "Código QR", color: "#F59E0B" },
+
   directo: { nombre: "Directo", color: "#64748B" }
 };
+
 const REDES_SOCIALES = [
   "facebook",
   "instagram",
@@ -371,14 +384,15 @@ function renderLeyendaGrafico(canalesActivos) {
   const contenedor = $("chartLegend");
   if (!contenedor) return;
 
-  if (!canalesActivos.length) {
-    contenedor.innerHTML = `
-      <span class="chart-legend-empty">
-        Sin redes sociales registradas en este período
-      </span>
-    `;
+  if (canalesActivos.length <= 1) {
+
+    contenedor.innerHTML = "";
+
+    contenedor.style.display = "none";
+
     return;
-  }
+
+}
 
   contenedor.innerHTML = canalesActivos.map(canal => {
 
@@ -517,36 +531,52 @@ for (let numeroDia = 1; numeroDia <= ultimoDiaDelMes; numeroDia += 1) {
    *   instagram: 0
    *   tiktok: 0
    *   youtube: 0
-   */
-  const traficoPorDia = {};
-
-  dias.forEach(dia => {
-    traficoPorDia[dia] = Object.fromEntries(
-      REDES_SOCIALES.map(canal => [canal, 0])
-    );
-  });
-
   /*
-   * Registramos únicamente las cuatro redes sociales.
-   * WhatsApp, Google y tráfico directo no entran en este gráfico.
-   */
-  visitas.forEach(visita => {
-    const dia = fechaISOEnPeru(visita.fecha);
-    const canal = visita.canal;
+ * Detectamos automáticamente los canales que realmente
+ * tienen visitas durante el mes mostrado.
+ */
+const canalesActivos = [
+  ...new Set(
+    visitas
+      .filter(visita => {
+        const dia = fechaISOEnPeru(visita.fecha);
+        return dias.includes(dia);
+      })
+      .map(visita => visita.canal)
+      .filter(Boolean)
+  )
+];
 
-    if (
-      traficoPorDia[dia] &&
-      REDES_SOCIALES.includes(canal)
-    ) {
-      traficoPorDia[dia][canal] += 1;
-    }
-  });
+/*
+ * Matriz diaria dinámica:
+ * cada día contiene únicamente los canales existentes.
+ */
+const traficoPorDia = {};
 
+dias.forEach(dia => {
+  traficoPorDia[dia] = Object.fromEntries(
+    canalesActivos.map(canal => [canal, 0])
+  );
+});
+
+/*
+ * Sumamos cada visita en su día y canal correspondiente.
+ */
+visitas.forEach(visita => {
+  const dia = fechaISOEnPeru(visita.fecha);
+  const canal = visita.canal;
+
+  if (
+    traficoPorDia[dia] &&
+    canalesActivos.includes(canal)
+  ) {
+    traficoPorDia[dia][canal] += 1;
+  }
+});
   /*
    * Solo aparecen las redes que realmente tienen registros
    * para el cliente y período seleccionados.
    */
-  const canalesActivos = [...REDES_SOCIALES];
  
 
   renderLeyendaGrafico(canalesActivos);
@@ -735,16 +765,17 @@ function renderCanales() {
    * Las cuatro redes aparecen siempre y mantienen
    * permanentemente el mismo orden.
    */
-  const canalesMostrar = [
-    "facebook",
-    "instagram",
-    "tiktok",
-    "youtube"
-  ];
+  const canalesMostrar = Object.keys(datos)
+  .filter(canal => datos[canal] > 0)
+  .sort((a, b) => datos[b] - datos[a]);
 
   contenedor.innerHTML = canalesMostrar.map(canal => {
-    const visual = CANALES[canal];
-    const total = datos[canal] || 0;
+const visual = CANALES[canal] || {
+  nombre: etiquetaCanal(canal),
+  color: "#64748B"
+};    
+
+const total = datos[canal] || 0;
 
     return `
       <article
