@@ -1,115 +1,41 @@
 // ============================================================
-// OMEGAHUB PLATFORM — DASHBOARD V2
-// Release 2.3.0 Oficial
+// OMEGAHUB — PICAPIEDRA 2.0
+// Datos reales desde Supabase, sin analítica inventada
 // ============================================================
 
-console.log("🚀 OmegaHub Dashboard 2.3.0 Oficial iniciado");
-
-// ============================================================
-// 1. CLIENTE SUPABASE
-// ============================================================
+console.log("🚀 OmegaHub Picapiedra 2.0 iniciado");
 
 const supabaseClient = window.supabaseClient;
 
-if (!supabaseClient) {
-  console.error("❌ window.supabaseClient no existe. Revisa supabase.js y el orden de scripts.");
-}
-
-// ============================================================
-// 2. ESTADO GLOBAL
-// ============================================================
-
-const OmegaAdapters = window.OmegaAdapters || {
-  adaptarCliente(cliente) {
-    return cliente;
-  },
-
-  adaptarCanal(canal) {
-    return canal;
-  },
-
-  adaptarVisita(visita) {
-    return {
-      ...visita,
-      createdAt: visita.created_at || visita.createdAt,
-      clienteId: visita.cliente_id || visita.clienteId,
-      clienteCodigo: visita.cliente_codigo || visita.clienteCodigo,
-      canalId: visita.canal_id || visita.canalId,
-      canalNombre: visita.canal_nombre || visita.canalNombre || visita.canal || visita.origen || "directo"
-    };
-  },
-
-  etiquetaCanal(valor) {
-    const texto = String(valor || "directo").toLowerCase();
-
-    if (texto.includes("facebook")) return "Facebook";
-    if (texto.includes("instagram")) return "Instagram";
-    if (texto.includes("tiktok")) return "TikTok";
-    if (texto.includes("whatsapp")) return "WhatsApp";
-    if (texto.includes("google")) return "Google";
-    if (texto.includes("pauta") || texto.includes("ads") || texto.includes("meta")) return "Pauta";
-
-    return texto.charAt(0).toUpperCase() + texto.slice(1);
-  }
-};const OmegaHub = {
-  
-  clientes: [],
-  canales: [],
+const OmegaHub = {
   visitas: [],
-  clienteActivoId: "todos",
-  charts: {
-    origen: null,
-    dispositivo: null,
-    dias: null,
-    clientes: null
-  },
+  clienteActivo: "todos",
+  chartDias: null,
   refrescoMs: 60000
 };
-// ============================================================
-// CONFIGURACIÓN VISUAL DE CANALES
-// ============================================================
 
-const OmegaCanalesVisual = {
-  Facebook: {
-    color: "#1877F2",
-    logo: "📘"
-  },
-  Instagram: {
-    color: "#E1306C",
-    logo: "📷"
-  },
-  TikTok: {
-    color: "#687280",
-    logo: "🎵"
-  },
-  WhatsApp: {
-    color: "#25D366",
-    logo: "🟢"
-  },
-  YouTube: {
-    color: "#FF0000",
-    logo: "▶️"
-  },
-  "Google Business": {
-    color: "#4285F4",
-    logo: "🔵"
-  },
-  "Shopper Digital": {
-    color: "#F97316",
-    logo: "🛒"
-  }
+const CANALES = {
+  facebook: { nombre: "Facebook", color: "#1877F2" },
+  instagram: { nombre: "Instagram", color: "#E1306C" },
+  tiktok: { nombre: "TikTok", color: "#94A3B8" },
+  youtube: { nombre: "YouTube", color: "#FF0000" },
+  whatsapp: { nombre: "WhatsApp", color: "#25D366" },
+  google: { nombre: "Google", color: "#4285F4" },
+  directo: { nombre: "Directo", color: "#64748B" }
 };
+const REDES_SOCIALES = [
+  "facebook",
+  "instagram",
+  "tiktok",
+  "youtube"
+];
 
-function visualCanal(nombre) {
-  return OmegaCanalesVisual[nombre] || {
-    color: "#64748B",
-    logo: "●"
-  };
-}
-
-// ============================================================
-// 3. UTILIDADES
-// ============================================================
+const ICONOS_RRSS = {
+  facebook: "f",
+  instagram: "◎",
+  tiktok: "♪",
+  youtube: "▶"
+};
 
 function $(id) {
   return document.getElementById(id);
@@ -120,132 +46,100 @@ function setText(id, value) {
   if (el) el.textContent = value;
 }
 
-function setEstado(texto, clase = "") {
-  const el = $("estado");
-  if (!el) return;
-
-  el.textContent = texto;
-  el.className = clase ? `estado-${clase}` : "";
-}
-
 function numero(valor) {
   return new Intl.NumberFormat("es-PE").format(Number(valor || 0));
 }
 
-function fechaISO(valor) {
-  if (!valor) return "";
-  return new Date(valor).toISOString().slice(0, 10);
+function setEstado(texto, tipo = "") {
+  const el = $("estado");
+  if (!el) return;
+  el.textContent = texto;
+  el.className = tipo ? `estado-${tipo}` : "";
 }
 
-function hoyISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+function fechaPeru(valor) {
+  if (!valor) return "Sin fecha";
 
-function horaPeruTexto() {
-  return new Date().toLocaleTimeString("es-PE", {
+  return new Date(valor).toLocaleString("es-PE", {
     timeZone: "America/Lima",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
+    minute: "2-digit"
   });
 }
 
-function destruirChart(chart) {
-  if (chart) chart.destroy();
+function fechaISOEnPeru(valor = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(valor));
 }
 
-function valorCampo(obj, campos, fallback = "") {
-  for (const campo of campos) {
-    if (
-      obj &&
-      obj[campo] !== undefined &&
-      obj[campo] !== null &&
-      obj[campo] !== ""
-    ) {
-      return obj[campo];
-    }
+function normalizarVisita(visita) {
+  return {
+    ...visita,
+    fecha: visita.created_at || visita.createdAt || visita.fecha || null,
+    cliente: String(
+      visita.cliente ||
+      visita.cliente_codigo ||
+      visita.clienteCodigo ||
+      visita.cliente_id ||
+      visita.clienteId ||
+      "sin-cliente"
+    ).trim(),
+    canal: normalizarCanal(
+      visita.origen ||
+      visita.canal ||
+      visita.canal_nombre ||
+      visita.canalNombre ||
+      "directo"
+    ),
+    campania: visita.campania || visita.campaña || "Sin campaña",
+    dispositivo: visita.dispositivo || visita.device || "No identificado",
+    destino: visita.destino || visita.pagina || ""
+  };
+}
+
+function normalizarCanal(valor) {
+  const texto = String(valor || "directo").toLowerCase();
+
+  if (texto.includes("facebook")) return "facebook";
+  if (texto.includes("instagram")) return "instagram";
+  if (texto.includes("tiktok")) return "tiktok";
+  if (texto.includes("youtube")) return "youtube";
+  if (texto.includes("whatsapp")) return "whatsapp";
+  if (texto.includes("google")) return "google";
+
+  return texto || "directo";
+}
+
+function etiquetaCanal(canal) {
+  return CANALES[canal]?.nombre ||
+    canal.replaceAll("_", " ").replace(/\b\w/g, letra => letra.toUpperCase());
+}
+
+function escapeHTML(texto) {
+  return String(texto ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function visitasFiltradas() {
+  if (OmegaHub.clienteActivo === "todos") {
+    return [...OmegaHub.visitas];
   }
-  function formatearTextoHumano(texto) {
-  return String(texto || "")
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, letra => letra.toUpperCase());
-}
 
-  return fallback;
-}
-function nombreCliente(cliente) {
-  return valorCampo(
-    cliente,
-    ["nombre", "razon_social", "empresa", "cliente"],
-    `Cliente ${cliente?.id ?? ""}`
+  return OmegaHub.visitas.filter(
+    visita => visita.cliente === OmegaHub.clienteActivo
   );
 }
-
-function nombreCanal(canal) {
-  return valorCampo(
-    canal,
-    ["nombre", "canal", "titulo", "tipo"],
-    `Canal ${canal?.id ?? ""}`
-  );
-}
-
-function tipoCanal(canal) {
-  return String(
-    valorCampo(canal, ["tipo", "origen", "plataforma"], "general")
-  ).toLowerCase();
-}
-
-function encontrarCliente(valor) {
-
-    return OmegaHub.clientes.find(cliente =>
-
-        String(cliente.id) === String(valor)
-
-        ||
-
-        String(cliente.codigo) === String(valor)
-
-    );
-
-}
-
-function encontrarCanal(valor) {
-
-    return OmegaHub.canales.find(canal =>
-
-        String(canal.id) === String(valor)
-
-        ||
-
-        String(canal.nombre).toLowerCase() === String(valor).toLowerCase()
-
-    );
-
-}
-
-function contarPor(lista, obtenerClave) {
-  return lista.reduce((acc, item) => {
-    const clave = obtenerClave(item) || "No identificado";
-    acc[clave] = (acc[clave] || 0) + 1;
-    return acc;
-  }, {});
-}
-
-function ordenarObjetoPorValor(obj) {
-  return Object.fromEntries(
-    Object.entries(obj).sort((a, b) => b[1] - a[1])
-  );
-}
-
-function ultimasVisitasOrdenadas(visitas) {
-  return [...visitas].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-  );
-}
-
-// ============================================================
-// 4. CARGA DE DATOS
-// ============================================================
 
 async function cargarDatos() {
   if (!supabaseClient) {
@@ -255,768 +149,600 @@ async function cargarDatos() {
 
   setEstado("Conectando...", "cargando");
 
-  const [clientesRes, canalesRes, visitasRes] = await Promise.all([
-    supabaseClient.from("clientes").select("*"),
-    supabaseClient.from("canales").select("*"),
-    supabaseClient.from("visitas").select("*").order("created_at", { ascending: false })
-  ]);
+  const { data, error } = await supabaseClient
+    .from("visitas")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  if (clientesRes.error) throw clientesRes.error;
-  if (canalesRes.error) throw canalesRes.error;
-  if (visitasRes.error) throw visitasRes.error;
+  if (error) {
+    console.error("Error cargando visitas:", error);
+    setEstado("Error de conexión", "error");
+    return;
+  }
 
-  OmegaHub.clientes = clientesRes.data.map(OmegaAdapters.adaptarCliente);
-  OmegaHub.canales = canalesRes.data.map(OmegaAdapters.adaptarCanal);
-  OmegaHub.visitas = visitasRes.data.map(OmegaAdapters.adaptarVisita);
-
-  console.log("✅ Clientes adaptados:", OmegaHub.clientes);
-  console.log("✅ Canales adaptados:", OmegaHub.canales);
-  console.log("✅ Visitas adaptadas:", OmegaHub.visitas);
-
+  OmegaHub.visitas = (data || []).map(normalizarVisita);
   setEstado("OmegaHub conectado", "ok");
-
-  renderDashboard();
-}
-// ============================================================
-// 5. FILTROS
-// ============================================================
-
-function getClienteActivoId() {
-  const selector = $("selectorCliente");
-  return selector ? selector.value : OmegaHub.clienteActivoId;
+  renderTodo();
 }
 
-function getVisitasFiltradas() {
-  const clienteId = getClienteActivoId();
-
-  if (clienteId === "todos") {
-    return ultimasVisitasOrdenadas(OmegaHub.visitas);
-  }
-
-  const cliente = encontrarCliente(clienteId);
-
-  return ultimasVisitasOrdenadas(
-    OmegaHub.visitas.filter(v =>
-      String(v.clienteId) === String(clienteId) ||
-      String(v.clienteCodigo) === String(cliente?.codigo)
-    )
-  );
-}
-
-function getCanalesFiltrados() {
-  const clienteId = getClienteActivoId();
-
-  if (clienteId === "todos") {
-    return OmegaHub.canales;
-  }
-
-  return OmegaHub.canales.filter(
-    c => String(c.cliente_id) === String(clienteId)
-  );
-}
-
-// ============================================================
-// 6. RENDER GENERAL
-// ============================================================
-function renderDashboard() {
-  renderFechaHoy();
-  renderHoraPeru();
+function renderTodo() {
+  renderFechaHora();
   renderSelectorClientes();
+  renderHeaderCliente();
   renderKPIs();
-  renderLive();
-  renderEcosistema();
-  renderGraficos();
+  renderGraficoDias();
+  renderCanales();
+  renderActividad();
+  renderTabla();
 }
 
-function renderHoraPeru() {
-    setText("horaPeru", horaPeruTexto());
+function renderFechaHora() {
+  const ahora = new Date();
+
+  const fecha = ahora.toLocaleDateString("es-PE", {
+    timeZone: "America/Lima",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+
+  setText("fechaHoy", fecha.charAt(0).toUpperCase() + fecha.slice(1));
+
+  setText(
+    "horaPeru",
+    ahora.toLocaleTimeString("es-PE", {
+      timeZone: "America/Lima",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+  );
 }
-
-function renderFechaHoy() {
-
-    const fecha = new Date();
-
-    const texto = fecha.toLocaleDateString("es-PE", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "America/Lima"
-    });
-
-    setText(
-        "fechaHoy",
-        texto.charAt(0).toUpperCase() + texto.slice(1)
-    );
-}
-
-// ============================================================
-// 7. SELECTOR DE CLIENTES
-// ============================================================
 
 function renderSelectorClientes() {
   const selector = $("selectorCliente");
   if (!selector) return;
 
-  const valorActual = selector.value || OmegaHub.clienteActivoId || "todos";
+  const clientes = [...new Set(
+    OmegaHub.visitas.map(visita => visita.cliente).filter(Boolean)
+  )].sort();
 
-  selector.innerHTML = "";
+  const valorActual = OmegaHub.clienteActivo;
 
-  const opcionTodos = document.createElement("option");
-  opcionTodos.value = "todos";
-  opcionTodos.textContent = "Todos";
-  selector.appendChild(opcionTodos);
+  selector.innerHTML = `<option value="todos">Todos</option>`;
 
-  OmegaHub.clientes.forEach(cliente => {
+  clientes.forEach(cliente => {
     const option = document.createElement("option");
-    option.value = cliente.id;
-    option.textContent = nombreCliente(cliente);
+    option.value = cliente;
+    option.textContent = cliente.replaceAll("-", " ").replace(/\b\w/g, letra => letra.toUpperCase());
     selector.appendChild(option);
   });
 
-  selector.value = valorActual;
-  OmegaHub.clienteActivoId = selector.value;
+  selector.value = clientes.includes(valorActual) ? valorActual : "todos";
+  OmegaHub.clienteActivo = selector.value;
 
   selector.onchange = () => {
-    OmegaHub.clienteActivoId = selector.value;
-    renderDashboard();
+    OmegaHub.clienteActivo = selector.value;
+    renderHeaderCliente();
+    renderKPIs();
+    renderGraficoDias();
+    renderCanales();
+    renderActividad();
+    renderTabla();
   };
 }
-// ============================================================
-// 8. KPIs
-// ============================================================
+
+function renderHeaderCliente() {
+  if (OmegaHub.clienteActivo === "todos") {
+    setText("nombreClienteHeader", "Todos los clientes");
+    return;
+  }
+
+  const nombre = OmegaHub.clienteActivo
+    .replaceAll("-", " ")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, letra => letra.toUpperCase());
+
+  setText("nombreClienteHeader", nombre);
+}
 
 function renderKPIs() {
-  const visitas = getVisitasFiltradas();
+  const visitas = visitasFiltradas();
+  const hoy = fechaISOEnPeru();
 
-  const total = visitas.length;
-
-  const hoy = visitas.filter(v =>
-    fechaISO(v.createdAt || v.created_at) === hoyISO()
+  const visitasHoy = visitas.filter(
+    visita => fechaISOEnPeru(visita.fecha) === hoy
   ).length;
 
-  const agrupadoCanales = {};
+  const porCanal = contarPor(visitas, visita => visita.canal);
+  const lider = Object.entries(porCanal).sort((a, b) => b[1] - a[1])[0];
 
-  visitas.forEach(v => {
-    const nombre = OmegaAdapters.etiquetaCanal(
-      v.canalNombre || v.origen || "directo"
-    );
-
-    agrupadoCanales[nombre] = (agrupadoCanales[nombre] || 0) + 1;
-  });
-
-  const canalLider = Object.entries(agrupadoCanales)
-    .sort((a, b) => b[1] - a[1])[0];
-
-  const clientesConVisitas = new Set(
-    visitas
-      .map(v => v.clienteId || v.clienteCodigo || v.cliente_id)
-      .filter(Boolean)
+  const clientesActivos = new Set(
+    visitas.map(visita => visita.cliente).filter(Boolean)
   ).size;
 
-  setText("totalVisitas", numero(total));
-  setText("visitasHoy", numero(hoy));
-
-  setText("campaniasActivas", canalLider ? canalLider[0] : "Sin datos");
+  setText("totalVisitas", numero(visitas.length));
+  setText("visitasHoy", numero(visitasHoy));
+  setText("canalLider", lider ? etiquetaCanal(lider[0]) : "Sin datos");
   setText(
-    "detalleCampanias",
-    canalLider ? `${numero(canalLider[1])} visitas` : "Aún sin tráfico"
+    "detalleCanalLider",
+    lider ? `${numero(lider[1])} visitas registradas` : "Aún sin tráfico registrado"
   );
-
-  setText("clientesRegistrados", numero(clientesConVisitas));
-
-  setText("detalleTotal", "Tráfico acumulado en OmegaHub");
-  setText("detalleHoy", "Movimiento del día");
-  setText("detalleClientes", "Clientes con actividad");
+  setText("clientesActivos", numero(clientesActivos));
 }
 
-// ============================================================
-// 9. PANEL LIVE
-// ============================================================
-
-function renderLive(){
-
-    const visitas = getVisitasFiltradas();
-
-    if(visitas.length===0){
-
-        setText("ultimaVisitaTiempo","Sin registro");
-        setText("ultimaVisitaDetalle","Esperando actividad");
-
-        setText("visitasEnVivo","0 personas");
-
-        setText("campaniaLider","Sin dato");
-        setText("campaniaLiderDetalle","Aún sin tráfico");
-
-        return;
-
-    }
-
-    const ultima = visitas[0];
-
-    setText(
-        "ultimaVisitaTiempo",
-        new Date(ultima.createdAt).toLocaleString("es-PE")
-    );
-
-    const cliente = encontrarCliente(
-    ultima.clienteId || ultima.clienteCodigo
-);
-    const canal = encontrarCanal(
-    ultima.canalId || ultima.canalNombre
-);
-
-    const detalle = [];
-
-    if(cliente) detalle.push(nombreCliente(cliente));
-
-    if(canal) detalle.push(nombreCanal(canal));
-
-    setText(
-        "ultimaVisitaDetalle",
-        detalle.join(" · ")
-    );
-
-
-
-    const limite = new Date(
-        Date.now()-5*60*1000
-    );
-
-    const vivos = visitas.filter(v =>
-        new Date(v.createdAt)>=limite
-    ).length;
-
-    setText(
-        "visitasEnVivo",
-        `${numero(vivos)} ${vivos===1?"persona":"personas"}`
-    );
-
-
-
-    const agrupado = {};
-
-visitas.forEach(v => {
-    const nombre = OmegaAdapters.etiquetaCanal(
-        v.canalNombre || "directo"
-    );
-
-    agrupado[nombre] = (agrupado[nombre] || 0) + 1;
-});
-
-    const lider = Object.entries(agrupado)
-        .sort((a,b)=>b[1]-a[1])[0];
-
-    if(lider){
-
-        setText("campaniaLider",lider[0]);
-
-        setText(
-            "campaniaLiderDetalle",
-            `${numero(lider[1])} visitas`
-        );
-
-    }
-
+function contarPor(lista, obtenerClave) {
+  return lista.reduce((acc, item) => {
+    const clave = obtenerClave(item) || "sin-dato";
+    acc[clave] = (acc[clave] || 0) + 1;
+    return acc;
+  }, {});
 }
-// ============================================================
-// 10. ECOSISTEMA COMERCIAL
-// ============================================================
-
-function renderEcosistema() {
-  const contenedor = $("ecosistema");
+function renderLeyendaGrafico(canalesActivos) {
+  const contenedor = $("chartLegend");
   if (!contenedor) return;
 
-  const visitas = getVisitasFiltradas();
-  const canales = getCanalesFiltrados();
-
-  contenedor.innerHTML = "";
-
-  if (!canales.length) {
+  if (!canalesActivos.length) {
     contenedor.innerHTML = `
-      <div class="ecosistema-empty">
-        No hay canales registrados todavía.
-      </div>
+      <span class="chart-legend-empty">
+        Sin redes sociales registradas en este período
+      </span>
     `;
     return;
   }
 
-  canales.forEach(canal => {
-    const tipo = tipoCanal(canal);
+  contenedor.innerHTML = canalesActivos.map(canal => {
 
-const visitasCanal = visitas.filter(v =>
-    String(v.canalNombre).toLowerCase() === tipo
-);
+  const visual = CANALES[canal];
 
-    const card = crearCardEcosistema(canal, visitasCanal.length);
-    contenedor.appendChild(card);
-  });
-}
+  return `
+    <span class="chart-legend-item">
 
-function crearCardEcosistema(canal, totalVisitas) {
-  const tipo = tipoCanal(canal);
+      <span
+        class="chart-legend-color"
+        style="background-color:${visual.color}"
+      ></span>
 
-  const activo =
-    typeof obtenerActivoOmega === "function"
-      ? obtenerActivoOmega(tipo)
-      : {
-          nombre: nombreCanal(canal),
-          icono: "🔗",
-          color: "#64748B",
-          categoria: "general",
-          decision: "medicion_general"
-        };
-
-  const url = valorCampo(canal, ["url", "enlace", "link"], "");
-
-  const card = document.createElement("article");
-  card.className = "ecosistema-card";
-  card.style.borderColor = activo.color || "#64748B";
-
-  card.innerHTML = `
-    <div class="ecosistema-card-top">
-      <span 
-        class="ecosistema-icono" 
-        style="background:${activo.color || "#64748B"}"
-      >
-        ${activo.icono || "🔗"}
+      <span class="chart-legend-icon">
+        ${escapeHTML(ICONOS_RRSS[canal] || "•")}
       </span>
 
-      <div>
-        <strong>${escapeHTML(activo.nombre || nombreCanal(canal))}</strong>
-        <p>${escapeHTML(nombreCanal(canal))}</p>
-      </div>
-    </div>
+      <span class="chart-legend-name">
+        ${escapeHTML(visual.nombre)}
+      </span>
 
-    <div class="ecosistema-card-body">
-      <h4>${numero(totalVisitas)}</h4>
-      <span>visitas registradas</span>
-    </div>
-
-    <div class="ecosistema-card-footer">
-<small>${escapeHTML(String(activo.categoria || "activo digital").replaceAll("_", " ").replace(/\b\w/g, letra => letra.toUpperCase()))}</small>      ${
-        url
-          ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">Abrir</a>`
-          : ""
-      }
-    </div>
+    </span>
   `;
 
-  return card;
-}
-// ============================================================
-// 11. GRÁFICOS
-// ============================================================
-
-function renderGraficos() {
-    const visitas = getVisitasFiltradas();
-
-    renderChartOrigen(visitas);
-    renderChartDispositivo(visitas);
-    renderChartDias(visitas);
-    renderChartClientes(visitas);
+}).join("");
 }
 
-// ------------------------------------------------------------
-// ORIGEN
-// ------------------------------------------------------------
-
-function renderChartOrigen(visitas) {
-
-    const canvas = $("chartOrigen");
-
-    if (!canvas || typeof Chart === "undefined") return;
-
-    destruirChart(OmegaHub.charts.origen);
-
-    const datos = agruparVisitasPorCanal(visitas);
-
-    const labels = Object.keys(datos);
-
-    OmegaHub.charts.origen = new Chart(canvas, {
-
-        type: "bar",
-
-        data: {
-
-            labels,
-
-            datasets: [{
-
-                label: "Visitas",
-
-                data: Object.values(datos),
-
-                backgroundColor: labels.map(nombre => visualCanal(nombre).color),
-
-                borderColor: labels.map(nombre => visualCanal(nombre).color),
-
-                borderWidth: 1
-
-            }]
-
-        },
-
-        options: opcionesChartConEjes()
-
-    });
-
-}
-// ------------------------------------------------------------
-// DISPOSITIVO
-// ------------------------------------------------------------
-
-function renderChartDispositivo(visitas) {
-
-    const canvas = $("chartDispositivo");
-
-    if (!canvas || typeof Chart === "undefined") return;
-
-    destruirChart(OmegaHub.charts.dispositivo);
-
-    const datos = {};
-
-    visitas.forEach(v => {
-
-        const dispositivo =
-            valorCampo(
-                v,
-                ["dispositivo", "device", "tipo_dispositivo"],
-                "No identificado"
-            );
-
-        datos[dispositivo] =
-            (datos[dispositivo] || 0) + 1;
-
-    });
-
-    OmegaHub.charts.dispositivo = new Chart(canvas, {
-
-        type: "doughnut",
-
-        data: {
-
-            labels: Object.keys(datos),
-
-            datasets: [{
-
-                data: Object.values(datos)
-
-            }]
-
-        },
-
-        options: opcionesChartSinEjes()
-
-    });
-
-}
-// ------------------------------------------------------------
-// VISITAS POR DÍA
-// ------------------------------------------------------------
-
-function renderChartDias(visitas) {
-
-    const canvas = $("chartDias");
-
-    if (!canvas || typeof Chart === "undefined") return;
-
-    destruirChart(OmegaHub.charts.dias);
-
-    const datos = {};
-
-    visitas.forEach(v => {
-
-        const dia = fechaISO(v.createdAt);
-
-        datos[dia] = (datos[dia] || 0) + 1;
-
-    });
-
-    const labelsISO = Object.keys(datos).sort();
-
-const labels = labelsISO.map(fecha => {
-  const [anio, mes, dia] = fecha.split("-");
-  return `${dia}/${mes}/${anio}`;
-});
-
-    OmegaHub.charts.dias = new Chart(canvas, {
-
-        type: "line",
-
-        data: {
-
-            labels,
-
-            datasets: [{
-
-                label: "Visitas por día",
-
-                data: labelsISO.map(l => datos[l]),
-
-                tension: 0.35,
-
-                fill: true
-
-            }]
-
-        },
-
-        options: opcionesChartConEjes()
-
-    });
-
+function calcularEscalaVisitas(maximoReal) {
+  const maximo = Number(maximoReal || 0);
+
+  if (maximo <= 5) {
+    return {
+      maximo: 5,
+      paso: 1
+    };
+  }
+
+  if (maximo <= 50) {
+    return {
+      maximo: Math.ceil(maximo / 10) * 10,
+      paso: 10
+    };
+  }
+
+  if (maximo <= 100) {
+    return {
+      maximo: 100,
+      paso: 20
+    };
+  }
+
+  if (maximo <= 500) {
+    return {
+      maximo: Math.ceil(maximo / 100) * 100,
+      paso: 100
+    };
+  }
+
+  if (maximo <= 1000) {
+    return {
+      maximo: Math.ceil(maximo / 200) * 200,
+      paso: 200
+    };
+  }
+
+  return {
+    maximo: Math.ceil(maximo / 500) * 500,
+    paso: 500
+  };
 }
 
+function renderEscalaVertical(maximo, paso) {
+  const contenedor = $("chartYFixed");
+  if (!contenedor) return;
 
+  const valores = [];
 
-// ------------------------------------------------------------
-// TOP CLIENTES
-// ------------------------------------------------------------
+  for (let valor = maximo; valor >= 0; valor -= paso) {
+    valores.push(valor);
+  }
 
-function renderChartClientes(visitas) {
+  contenedor.innerHTML = `
 
-    const canvas = $("chartClientes");
+    <div class="chart-y-values">
+      ${valores.map(valor => `
+        <span>${numero(valor)}</span>
+      `).join("")}
+    </div>
+  `;
+}
 
-    if (!canvas || typeof Chart === "undefined") return;
+function renderGraficoDias() {
+  console.log("Entró a renderGraficoDias");
+  const canvas = $("chartDias");
+  const scroll = $("chartScroll");
+  const canvasWrap = $("chartCanvasWrap");
 
-    destruirChart(OmegaHub.charts.clientes);
+  if (
+    !canvas ||
+    !scroll ||
+    !canvasWrap ||
+    typeof Chart === "undefined"
+  ) {
+    return;
+  }
 
-    const datos = {};
+  const visitas = visitasFiltradas();
+const dias = [];
 
-    visitas.forEach(v => {
+/*
+ * Construimos todos los días del mes actual
+ * en horario de Perú: 01, 02, 03... hasta 30 o 31.
+ */
+const hoyPeru = fechaISOEnPeru();
+const [anioActual, mesActual] = hoyPeru
+  .split("-")
+  .map(Number);
 
-        const cliente = encontrarCliente(
-    v.clienteId || v.clienteCodigo
+const ultimoDiaDelMes = new Date(
+  anioActual,
+  mesActual,
+  0
+).getDate();
+
+for (let numeroDia = 1; numeroDia <= ultimoDiaDelMes; numeroDia += 1) {
+  dias.push(
+    `${anioActual}-${String(mesActual).padStart(2, "0")}-${String(numeroDia).padStart(2, "0")}`
+  );
+}
+
+  /*
+   * Matriz:
+   *
+   * 2026-07-01:
+   *   facebook: 0
+   *   instagram: 0
+   *   tiktok: 0
+   *   youtube: 0
+   */
+  const traficoPorDia = {};
+
+  dias.forEach(dia => {
+    traficoPorDia[dia] = Object.fromEntries(
+      REDES_SOCIALES.map(canal => [canal, 0])
+    );
+  });
+
+  /*
+   * Registramos únicamente las cuatro redes sociales.
+   * WhatsApp, Google y tráfico directo no entran en este gráfico.
+   */
+  visitas.forEach(visita => {
+    const dia = fechaISOEnPeru(visita.fecha);
+    const canal = visita.canal;
+
+    if (
+      traficoPorDia[dia] &&
+      REDES_SOCIALES.includes(canal)
+    ) {
+      traficoPorDia[dia][canal] += 1;
+    }
+  });
+
+  /*
+   * Solo aparecen las redes que realmente tienen registros
+   * para el cliente y período seleccionados.
+   */
+  const canalesActivos = [...REDES_SOCIALES];
+ 
+
+  renderLeyendaGrafico(canalesActivos);
+
+  /*
+   * El eje inferior muestra únicamente el número del día.
+   */
+  const labels = dias.map(dia => dia.slice(-2));
+
+  /*
+   * Construimos un conjunto de barras por cada red activa.
+   */
+  const datasets = canalesActivos.map(canal => {
+    const visual = CANALES[canal];
+
+    return {
+      label: visual.nombre,
+
+      data: dias.map(dia =>
+        traficoPorDia[dia][canal]
+      ),
+
+      backgroundColor: visual.color,
+      borderColor: visual.color,
+
+      borderWidth: 0,
+      borderRadius: 3,
+
+      /*
+ * Barras más visibles.
+ */
+
+barThickness: 38,
+maxBarThickness: 40,
+
+categoryPercentage: 0.96,
+barPercentage: 1
+    };
+  });
+
+  const maximoReal = Math.max(
+  0,
+  ...dias.flatMap(dia =>
+    canalesActivos.map(canal =>
+      traficoPorDia[dia][canal]
+    )
+  )
 );
 
-        const nombre = cliente
-            ? nombreCliente(cliente)
-            : "Cliente no identificado";
+const escala = calcularEscalaVisitas(maximoReal);
 
-        datos[nombre] = (datos[nombre] || 0) + 1;
+renderEscalaVertical(
+  escala.maximo,
+  escala.paso
+);
 
-    });
+  /*
+   * Aproximadamente 15 días visibles por pantalla.
+   *
+   * 30 días = dos anchos de pantalla:
+   * primera vista 01–15;
+   * segundo desplazamiento 16–30.
+   */
+  const anchoVisible = Math.max(
+    scroll.clientWidth,
+    700
+  );
 
-    OmegaHub.charts.clientes = new Chart(canvas, {
+  const gruposVisibles = 15;
 
-        type: "bar",
+  const multiplicador = Math.max(
+    1,
+    Math.ceil(dias.length / gruposVisibles)
+  );
 
-        data: {
+  canvasWrap.style.width =
+    `${anchoVisible * multiplicador}px`;
 
-            labels: Object.keys(datos),
+  if (OmegaHub.chartDias) {
+    OmegaHub.chartDias.destroy();
+  }
 
-            datasets: [{
+  OmegaHub.chartDias = new Chart(canvas, {
+    type: "bar",
 
-                label: "Visitas",
+    data: {
+      labels,
+      datasets
+    },
 
-                data: Object.values(datos)
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
 
-            }]
+      animation: {
+        duration: 450
+      },
 
+      interaction: {
+  mode: "nearest",
+  intersect: true
+},
+
+      plugins: {
+  legend: {
+    display: false
+  },
+
+  tooltip: {
+    enabled: false
+  }
+},
+      scales: {
+        x: {
+          stacked: false,
+          offset: true,
+
+          ticks: {
+            color: "#cbd5e1",
+            autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0
+          },
+
+          grid: {
+            display: false
+          },
+
+          border: {
+            color: "rgba(148,163,184,.22)"
+          }
         },
 
-        options: opcionesChartConEjes()
+        y: {
+  beginAtZero: true,
+  min: 0,
+  max: escala.maximo,
+  grace: 0,
 
-    });
+  ticks: {
+    display: false,
+    stepSize: escala.paso
+  },
 
+  grid: {
+    color: "rgba(148,163,184,.12)"
+  },
+
+  border: {
+    display: false
+  }
+}
+      }
+    }
+  });
+
+  /*
+   * Cada vez que cambia de cliente, regresamos al día inicial.
+   */
+  scroll.scrollLeft = 0;
 }
 
+function renderCanales() {
+  const contenedor = $("canalesResumen");
+  if (!contenedor) return;
 
+  /*
+   * Tomamos únicamente los registros del cliente seleccionado
+   * correspondientes al mes actual en horario de Perú.
+   */
+  const hoyPeru = fechaISOEnPeru();
+  const mesActual = hoyPeru.slice(0, 7);
 
-// ------------------------------------------------------------
-// AGRUPACIÓN POR CANAL
-// ------------------------------------------------------------
+  const visitasDelMes = visitasFiltradas().filter(visita => {
+    if (!visita.fecha) return false;
 
-function agruparVisitasPorCanal(visitas) {
+    return fechaISOEnPeru(visita.fecha).slice(0, 7) === mesActual;
+  });
 
-    const datos = {};
+  const datos = contarPor(
+    visitasDelMes,
+    visita => visita.canal
+  );
 
-    visitas.forEach(v => {
+  /*
+   * Las cuatro redes aparecen siempre y mantienen
+   * permanentemente el mismo orden.
+   */
+  const canalesMostrar = [
+    "facebook",
+    "instagram",
+    "tiktok",
+    "youtube"
+  ];
 
-        const nombre =
-            OmegaAdapters.etiquetaCanal(
-                v.canalNombre || "directo"
-            );
-            // Ocultar "Directo" en la marcha blanca
-if (nombre === "Directo") {
+  contenedor.innerHTML = canalesMostrar.map(canal => {
+    const visual = CANALES[canal];
+    const total = datos[canal] || 0;
+
+    return `
+      <article
+        class="channel-card"
+        style="--channel-color:${visual.color}"
+      >
+        <div class="channel-name">
+          <span class="channel-dot"></span>
+          ${escapeHTML(visual.nombre)}
+        </div>
+
+        <strong>${numero(total)}</strong>
+
+        <small>
+          ${total === 1
+            ? "ingreso efectivo"
+            : "ingresos efectivos"}
+        </small>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderActividad() {
+  const visitas = visitasFiltradas();
+
+  if (!visitas.length) {
+    setText("ultimaVisitaTiempo", "Sin registro");
+    setText("ultimaVisitaDetalle", "Esperando actividad");
+    setText("visitasEnVivo", "0 personas");
     return;
+  }
+
+  const ultima = visitas[0];
+
+  setText("ultimaVisitaTiempo", fechaPeru(ultima.fecha));
+  setText(
+    "ultimaVisitaDetalle",
+    `${ultima.cliente} · ${etiquetaCanal(ultima.canal)} · ${ultima.campania}`
+  );
+
+  const limite = Date.now() - (5 * 60 * 1000);
+  const activas = visitas.filter(
+    visita => new Date(visita.fecha).getTime() >= limite
+  ).length;
+
+  setText(
+    "visitasEnVivo",
+    `${numero(activas)} ${activas === 1 ? "persona" : "personas"}`
+  );
 }
 
-        datos[nombre] =
-            (datos[nombre] || 0) + 1;
+function renderTabla() {
+  const tbody = $("ultimasVisitasBody");
+  if (!tbody) return;
 
-    });
+  const visitas = visitasFiltradas().slice(0, 20);
 
-    return datos;
+  if (!visitas.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No hay visitas registradas.</td></tr>`;
+    return;
+  }
 
-}
-// ============================================================
-// 12. OPCIONES CHART.JS
-// ============================================================
+  tbody.innerHTML = visitas.map(visita => {
+    const destino = visita.destino
+      ? `<a href="${escapeHTML(visita.destino)}" target="_blank" rel="noopener noreferrer">Abrir</a>`
+      : "Sin destino";
 
-function opcionesChartConEjes() {
-
-    return {
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-        plugins: {
-
-            legend: {
-
-              display: false,
-
-                labels: {
-
-                    color: "#cbd5e1"
-
-                }
-
-            }
-
-        },
-
-        scales: {
-
-            x: {
-
-                ticks: {
-
-                    color: "#cbd5e1"
-
-                },
-
-                grid: {
-
-                    color: "rgba(148,163,184,.15)"
-
-                }
-
-            },
-
-            y: {
-
-                beginAtZero: true,
-
-                ticks: {
-
-                    color: "#cbd5e1",
-
-                    precision: 0
-
-                },
-
-                grid: {
-
-                    color: "rgba(148,163,184,.15)"
-
-                }
-
-            }
-
-        }
-
-    };
-
+    return `
+      <tr>
+        <td>${escapeHTML(fechaPeru(visita.fecha))}</td>
+        <td>${escapeHTML(visita.cliente)}</td>
+        <td>${escapeHTML(etiquetaCanal(visita.canal))}</td>
+        <td>${escapeHTML(visita.campania)}</td>
+        <td>${escapeHTML(visita.dispositivo)}</td>
+        <td>${destino}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
-function opcionesChartSinEjes() {
+document.addEventListener("DOMContentLoaded", async () => {
+  renderFechaHora();
+  setInterval(renderFechaHora, 1000);
 
-    return {
+  await cargarDatos();
 
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-        plugins: {
-
-            legend: {
-
-                labels: {
-
-                    color: "#cbd5e1"
-
-                }
-
-            }
-
-        }
-
-    };
-
-}
-
-
-
-// ============================================================
-// 13. SEGURIDAD HTML
-// ============================================================
-
-function escapeHTML(texto){
-
-    return String(texto ?? "")
-
-        .replaceAll("&","&amp;")
-
-        .replaceAll("<","&lt;")
-
-        .replaceAll(">","&gt;")
-
-        .replaceAll('"',"&quot;")
-
-        .replaceAll("'","&#039;");
-
-}
-
-function escapeAttr(texto){
-
-    return escapeHTML(texto);
-
-}
-
-
-
-// ============================================================
-// 14. INICIALIZACIÓN
-// ============================================================
-
-document.addEventListener("DOMContentLoaded",async()=>{
-
-    try{
-
-        renderFechaHoy();
-
-renderHoraPeru();
-
-setInterval(renderHoraPeru,1000);
-
-await cargarDatos();
-
-        setInterval(async()=>{
-
-            try{
-
-                await cargarDatos();
-
-            }catch(error){
-
-                console.error(error);
-
-            }
-
-        },OmegaHub.refrescoMs);
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        setEstado("Error de conexión","error");
-
-    }
-
+  setInterval(cargarDatos, OmegaHub.refrescoMs);
 });

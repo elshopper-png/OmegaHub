@@ -28,66 +28,81 @@ function detectarNavegador() {
     return "otro";
 }
 
-async function registrarVisita() {
-    const params = new URLSearchParams(window.location.search);
+async function registrarVisita(destinoReal = "") {
+    try {
+        const params = new URLSearchParams(window.location.search);
 
-    const cliente = obtenerParametro("cliente", "kuya");
-    const campania =
-        params.get("campania") ||
-        params.get("campaña") ||
-        params.get("utm_campaign") ||
-        "sin_campania";
+        const cliente = obtenerParametro("cliente", "shopper");
 
-    let origen =
-    params.get("origen") ||
-    params.get("src") ||
-    params.get("utm_source") ||
-    "directo";
+        const campania =
+            params.get("campania") ||
+            params.get("campaña") ||
+            params.get("utm_campaign") ||
+            "sin_campania";
 
-if (origen.includes("tiktok")) {
-    origen = "tiktok";
-}
+        let origen =
+            params.get("origen") ||
+            params.get("src") ||
+            params.get("utm_source") ||
+            "directo";
 
-if (origen.includes("facebook")) {
-    origen = "facebook";
-}
+        origen = origen.toLowerCase();
 
-if (origen.includes("instagram")) {
-    origen = "instagram";
-}
+        if (origen.includes("tiktok")) {
+            origen = "tiktok";
+        } else if (
+            origen.includes("facebook") ||
+            origen.includes("fb")
+        ) {
+            origen = "facebook";
+        } else if (
+            origen.includes("instagram") ||
+            origen.includes("ig")
+        ) {
+            origen = "instagram";
+        } else if (
+            origen.includes("meta")
+        ) {
+            origen = "meta";
+        }
 
-    const destino =
-        params.get("destino") ||
-        "https://bodaalexyluzdy.my.canva.site/cat-logo";
+        const destino =
+            destinoReal ||
+            params.get("destino") ||
+            "sin_destino";
 
-    const visit = {
-        pagina: window.location.href,
-        origen: origen,
-        referer: document.referrer || "directo",
-        user_agent: navigator.userAgent,
-        idioma: navigator.language,
-        ancho: window.screen.width,
-        alto: window.screen.height,
-        cliente: cliente,
-        campania: campania,
-        destino: destino,
-        dispositivo: detectarDispositivo(),
-        navegador: detectarNavegador()
-    };
+        const visit = {
+            pagina: window.location.href,
+            origen: origen,
+            referer: document.referrer || "directo",
+            user_agent: navigator.userAgent,
+            idioma: navigator.language,
+            ancho: window.screen.width,
+            alto: window.screen.height,
+            cliente: cliente,
+            campania: campania,
+            destino: destino,
+            dispositivo: detectarDispositivo(),
+            navegador: detectarNavegador()
+        };
 
-    console.log("Enviando visita a Supabase...");
-    console.table(visit);
+        console.log("Enviando visita a Supabase...");
+        console.table(visit);
 
-    const { error } = await supabaseClient
-        .from("visitas")
-        .insert([visit]);
+        const { error } = await supabaseClient
+            .from("visitas")
+            .insert([visit]);
 
-    if (error) {
-        console.error("Error al guardar visita:", error);
-        return;
+        if (error) {
+            console.error("Error al guardar visita:", error);
+            return false;
+        }
+
+        console.log("✅ Visita guardada en Supabase");
+        return true;
+
+    } catch (error) {
+        console.error("Error inesperado al registrar visita:", error);
+        return false;
     }
-
-    console.log("Visita guardada en Supabase");
 }
-
-registrarVisita();
