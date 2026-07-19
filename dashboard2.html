@@ -163,6 +163,50 @@
 
     </section>
 
+    <!-- =====================================================
+     DISTRIBUCIÓN DEL TRÁFICO POR HORARIO
+====================================================== -->
+
+<section class="panel horario-panel">
+
+  <div class="section-head">
+    <div>
+      <h3>Distribución del tráfico por horario</h3>
+
+      <p id="detallePeriodoHorario">
+        Período seleccionado: Hoy
+      </p>
+    </div>
+  </div>
+
+  <div class="horario-layout">
+
+    <div class="horario-chart-wrap">
+      <canvas id="chartHorario"></canvas>
+    </div>
+
+    <div class="horario-info">
+
+      <div id="horarioLegend" class="horario-legend"></div>
+
+      <div class="horario-destacado">
+        <span>Mayor actividad</span>
+
+        <strong id="horarioPrincipal">
+          Sin datos
+        </strong>
+
+        <small id="horarioPrincipalDetalle">
+          Esperando tráfico
+        </small>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
 
     <!-- =====================================================
          REGISTROS DETALLADOS
@@ -176,7 +220,7 @@
           <h3>Últimas visitas registradas</h3>
 
           <p>
-            Información bruta y verificable
+           Últimos 5 movimientos verificables
           </p>
         </div>
       </div>

@@ -40,7 +40,11 @@ const OmegaHub = {
   modoCliente: CLIENTE_VALIDO,
   vistaMaestra: VISTA_MAESTRA,
 
+  periodoActivo: "hoy",
+
   chartDias: null,
+  chartHorario: null,
+
   refrescoMs: 60000
 };
 
@@ -184,6 +188,255 @@ function visitasFiltradas() {
   );
 }
 
+function visitasDelPeriodoSeleccionado() {
+  const visitas = visitasFiltradas();
+  const hoy = fechaISOEnPeru();
+  const periodo = OmegaHub.periodoActivo;
+
+  if (periodo === "hoy") {
+    return visitas.filter(
+      visita => fechaISOEnPeru(visita.fecha) === hoy
+    );
+  }
+
+  if (periodo === "mes") {
+    const mesActual = hoy.slice(0, 7);
+
+    return visitas.filter(
+      visita =>
+        fechaISOEnPeru(visita.fecha).slice(0, 7) === mesActual
+    );
+  }
+
+  if (periodo === "anio") {
+    const anioActual = hoy.slice(0, 4);
+
+    return visitas.filter(
+      visita =>
+        fechaISOEnPeru(visita.fecha).slice(0, 4) === anioActual
+    );
+  }
+
+  if (periodo === "semana") {
+    const fechaHoy = new Date(`${hoy}T12:00:00-05:00`);
+    const diaSemana = fechaHoy.getDay();
+    const retroceso = diaSemana === 0 ? 6 : diaSemana - 1;
+
+    fechaHoy.setDate(fechaHoy.getDate() - retroceso);
+
+    const inicioSemana = fechaISOEnPeru(fechaHoy);
+
+    return visitas.filter(visita => {
+      const fechaVisita = fechaISOEnPeru(visita.fecha);
+
+      return fechaVisita >= inicioSemana &&
+        fechaVisita <= hoy;
+    });
+  }
+
+  return visitas;
+}
+
+function nombrePeriodoSeleccionado() {
+  const nombres = {
+    hoy: "Hoy",
+    semana: "Esta semana",
+    mes: "Este mes",
+    anio: "Este año"
+  };
+
+  return nombres[OmegaHub.periodoActivo] || "Hoy";
+}
+
+function horaEnPeru(valor) {
+  if (!valor) return 0;
+
+  const partes = new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
+    hour: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(new Date(valor));
+
+  return Number(
+    partes.find(parte => parte.type === "hour")?.value || 0
+  );
+}
+
+function renderGraficoHorario() {
+  const canvas = $("chartHorario");
+  const leyenda = $("horarioLegend");
+
+  if (
+    !canvas ||
+    !leyenda ||
+    typeof Chart === "undefined"
+  ) {
+    return;
+  }
+
+  const visitas = visitasDelPeriodoSeleccionado();
+
+  const horarios = {
+    manana: 0,
+    tarde: 0,
+    noche: 0
+  };
+
+  visitas.forEach(visita => {
+    const hora = horaEnPeru(visita.fecha);
+
+    if (hora >= 6 && hora < 12) {
+      horarios.manana += 1;
+    } else if (hora >= 12 && hora < 18) {
+      horarios.tarde += 1;
+    } else {
+      horarios.noche += 1;
+    }
+  });
+
+  const segmentos = [
+    {
+      clave: "manana",
+      nombre: "Mañana",
+      rango: "06:00–11:59",
+      icono: "🌅",
+      color: "#38bdf8"
+    },
+    {
+      clave: "tarde",
+      nombre: "Tarde",
+      rango: "12:00–17:59",
+      icono: "☀️",
+      color: "#f59e0b"
+    },
+    {
+      clave: "noche",
+      nombre: "Noche",
+      rango: "18:00–05:59",
+      icono: "🌙",
+      color: "#8b5cf6"
+    }
+  ];
+
+  const total = segmentos.reduce(
+    (suma, segmento) =>
+      suma + horarios[segmento.clave],
+    0
+  );
+
+  leyenda.innerHTML = segmentos.map(segmento => {
+    const cantidad = horarios[segmento.clave];
+
+    const porcentaje = total
+      ? Math.round((cantidad / total) * 100)
+      : 0;
+
+    return `
+      <div class="horario-legend-item">
+
+        <span
+          class="horario-color"
+          style="background:${segmento.color}"
+        ></span>
+
+        <div>
+          <strong>
+            ${segmento.icono}
+            ${segmento.nombre}
+          </strong>
+
+          <small>
+            ${segmento.rango}
+          </small>
+        </div>
+
+        <b>${porcentaje}%</b>
+
+      </div>
+    `;
+  }).join("");
+
+  const principal = [...segmentos].sort(
+    (a, b) =>
+      horarios[b.clave] - horarios[a.clave]
+  )[0];
+
+  const cantidadPrincipal =
+    principal ? horarios[principal.clave] : 0;
+
+  const porcentajePrincipal = total
+    ? Math.round((cantidadPrincipal / total) * 100)
+    : 0;
+
+  setText(
+    "detallePeriodoHorario",
+    `Período seleccionado: ${nombrePeriodoSeleccionado()}`
+  );
+
+  setText(
+    "horarioPrincipal",
+    total
+      ? `${principal.icono} ${principal.nombre}`
+      : "Sin datos"
+  );
+
+  setText(
+    "horarioPrincipalDetalle",
+    total
+      ? `${porcentajePrincipal}% del tráfico`
+      : "Esperando tráfico"
+  );
+
+  if (OmegaHub.chartHorario) {
+    OmegaHub.chartHorario.destroy();
+  }
+
+  OmegaHub.chartHorario = new Chart(canvas, {
+    type: "doughnut",
+
+    data: {
+      labels: segmentos.map(segmento =>
+        segmento.nombre
+      ),
+
+      datasets: [
+        {
+          data: segmentos.map(segmento =>
+            horarios[segmento.clave]
+          ),
+
+          backgroundColor: segmentos.map(
+            segmento => segmento.color
+          ),
+
+          borderColor: "#0d1a2b",
+          borderWidth: 4,
+          hoverOffset: 0
+        }
+      ]
+    },
+
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "68%",
+
+      animation: false,
+      events: [],
+
+      plugins: {
+        legend: {
+          display: false
+        },
+
+        tooltip: {
+          enabled: false
+        }
+      }
+    }
+  });
+}
+
 async function cargarDatos() {
   if (!supabaseClient) {
     setEstado("Error Supabase", "error");
@@ -218,14 +471,15 @@ async function cargarDatos() {
 }
 
 function renderTodo() {
-  renderFechaHora();
-  renderSelectorClientes();
-  renderHeaderCliente();
-  renderKPIs();
-  renderGraficoDias();
-  renderCanales();
-  renderActividad();
-  renderTabla();
+    renderFechaHora();
+    renderSelectorClientes();
+    renderHeaderCliente();
+    renderKPIs();
+    renderGraficoDias();
+    renderCanales();
+    renderGraficoHorario();   // ← nueva línea
+    renderActividad();
+    renderTabla();
 }
 
 function renderFechaHora() {
@@ -869,8 +1123,8 @@ function renderTabla() {
   const tbody = $("ultimasVisitasBody");
   if (!tbody) return;
 
-  const visitas = visitasFiltradas().slice(0, 20);
-
+  const visitas = visitasFiltradas().slice(0, 5);
+  
   if (!visitas.length) {
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No hay visitas registradas.</td></tr>`;
     return;
@@ -897,6 +1151,17 @@ function renderTabla() {
 document.addEventListener("DOMContentLoaded", async () => {
   renderFechaHora();
   setInterval(renderFechaHora, 1000);
+
+  const selectorPeriodo = $("selectorPeriodo");
+
+if (selectorPeriodo) {
+  selectorPeriodo.onchange = () => {
+    OmegaHub.periodoActivo =
+      selectorPeriodo.value;
+
+    renderGraficoHorario();
+  };
+}
 
   await cargarDatos();
 
