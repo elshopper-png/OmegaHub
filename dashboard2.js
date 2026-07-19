@@ -277,46 +277,56 @@ function renderGraficoHorario() {
   const visitas = visitasDelPeriodoSeleccionado();
 
   const horarios = {
-    manana: 0,
-    tarde: 0,
-    noche: 0
-  };
+  madrugada: 0,
+  manana: 0,
+  tarde: 0,
+  noche: 0
+};
 
   visitas.forEach(visita => {
-    const hora = horaEnPeru(visita.fecha);
+  const hora = horaEnPeru(visita.fecha);
 
-    if (hora >= 6 && hora < 12) {
-      horarios.manana += 1;
-    } else if (hora >= 12 && hora < 18) {
-      horarios.tarde += 1;
-    } else {
-      horarios.noche += 1;
-    }
-  });
+  if (hora >= 0 && hora < 6) {
+    horarios.madrugada += 1;
+  } else if (hora >= 6 && hora < 12) {
+    horarios.manana += 1;
+  } else if (hora >= 12 && hora < 18) {
+    horarios.tarde += 1;
+  } else {
+    horarios.noche += 1;
+  }
+});
 
   const segmentos = [
-    {
-      clave: "manana",
-      nombre: "Mañana",
-      rango: "06:00–11:59",
-      icono: "🌅",
-      color: "#38bdf8"
-    },
-    {
-      clave: "tarde",
-      nombre: "Tarde",
-      rango: "12:00–17:59",
-      icono: "☀️",
-      color: "#f59e0b"
-    },
-    {
-      clave: "noche",
-      nombre: "Noche",
-      rango: "18:00–05:59",
-      icono: "🌙",
-      color: "#8b5cf6"
-    }
-  ];
+  {
+    clave: "madrugada",
+    nombre: "Madrugada",
+    rango: "00:00–05:59",
+    icono: "🌙",
+    color: "#64748b"
+  },
+  {
+    clave: "manana",
+    nombre: "Mañana",
+    rango: "06:00–11:59",
+    icono: "🌅",
+    color: "#38bdf8"
+  },
+  {
+    clave: "tarde",
+    nombre: "Tarde",
+    rango: "12:00–17:59",
+    icono: "☀️",
+    color: "#f59e0b"
+  },
+  {
+    clave: "noche",
+    nombre: "Noche",
+    rango: "18:00–23:59",
+    icono: "🌃",
+    color: "#8b5cf6"
+  }
+];
 
   const total = segmentos.reduce(
     (suma, segmento) =>
@@ -1124,7 +1134,7 @@ function renderTabla() {
   if (!tbody) return;
 
   const visitas = visitasFiltradas().slice(0, 5);
-  
+
   if (!visitas.length) {
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No hay visitas registradas.</td></tr>`;
     return;
