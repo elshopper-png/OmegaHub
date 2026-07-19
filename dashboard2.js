@@ -826,10 +826,11 @@ const total = datos[canal] || 0;
         <strong>${numero(total)}</strong>
 
         <small>
-          ${total === 1
-            ? "ingreso efectivo"
-            : "ingresos efectivos"}
-        </small>
+          <small>
+  ${total === 1
+    ? "visita registrada"
+    : "visitas registradas"}
+</small>
       </article>
     `;
   }).join("");
