@@ -486,9 +486,13 @@ function renderEscalaVertical(maximo, paso) {
 
 function renderGraficoDias() {
   console.log("Entró a renderGraficoDias");
-  const canvas = $("chartDias");
-  const scroll = $("chartScroll");
-  const canvasWrap = $("chartCanvasWrap");
+ const canvas = $("chartDias");
+const scroll = $("chartScroll");
+const canvasWrap = $("chartCanvasWrap");
+
+const esMovil = window.matchMedia(
+  "(max-width: 768px)"
+).matches;
 
   if (
     !canvas ||
@@ -640,10 +644,12 @@ renderEscalaVertical(
    * primera vista 01–15;
    * segundo desplazamiento 16–30.
    */
-  const anchoVisible = Math.max(
-    scroll.clientWidth,
-    700
-  );
+  const anchoMinimo = esMovil ? 360 : 700;
+
+const anchoVisible = Math.max(
+  scroll.clientWidth,
+  anchoMinimo
+);
 
   const gruposVisibles = 15;
 
@@ -668,17 +674,47 @@ renderEscalaVertical(
     },
 
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+  responsive: true,
+  maintainAspectRatio: false,
 
-      animation: {
-        duration: 450
+  /*
+   * Evita redibujos continuos cuando las barras del navegador
+   * móvil aparecen o desaparecen durante el desplazamiento.
+   */
+  resizeDelay: esMovil ? 400 : 150,
+
+  /*
+   * En celulares evitamos renderizar el canvas a una densidad
+   * excesiva. En algunos equipos el DPR puede ser 3 o superior.
+   */
+  devicePixelRatio: esMovil
+    ? 1
+    : Math.min(window.devicePixelRatio || 1, 2),
+
+  /*
+   * En móvil eliminamos animaciones e interacción porque no
+   * utilizamos tooltips. Esto reduce bastante el trabajo gráfico.
+   */
+  animation: esMovil
+    ? false
+    : {
+        duration: 300
       },
 
-      interaction: {
-  mode: "nearest",
-  intersect: true
-},
+  events: esMovil
+    ? []
+    : [
+        "mousemove",
+        "mouseout",
+        "click",
+        "touchstart",
+        "touchmove"
+      ],
+
+  interaction: {
+    mode: "nearest",
+    intersect: true
+  },
 
       plugins: {
   legend: {
