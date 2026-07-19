@@ -829,7 +829,7 @@ const total = datos[canal] || 0;
           <small>
   ${total === 1
     ? "visita registrada"
-    : "visitas registradas"}
+    : "visitas registradas en el mes"}
 </small>
       </article>
     `;
