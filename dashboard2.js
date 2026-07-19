@@ -367,9 +367,9 @@ function renderKPIs() {
   setText("visitasHoy", numero(visitasHoy));
   setText("canalLider", lider ? etiquetaCanal(lider[0]) : "Sin datos");
   setText(
-    "detalleCanalLider",
-    lider ? `${numero(lider[1])} visitas registradas` : "Aún sin tráfico registrado"
-  );
+  "detalleCanalLider",
+  lider ? `${numero(lider[1])} visitas en OmegaHub` : "Aún sin tráfico registrado"
+);
   setText("clientesActivos", numero(clientesActivos));
 }
 
