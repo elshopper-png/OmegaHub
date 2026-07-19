@@ -613,11 +613,11 @@ visitas.forEach(visita => {
  * Barras más visibles.
  */
 
-barThickness: 38,
-maxBarThickness: 40,
+barThickness: esMovil ? 28 : 38,
+maxBarThickness: esMovil ? 30 : 40,
 
-categoryPercentage: 0.96,
-barPercentage: 1
+categoryPercentage: esMovil ? 0.82 : 0.96,
+barPercentage: esMovil ? 0.86 : 1
     };
   });
 
@@ -651,7 +651,7 @@ const anchoVisible = Math.max(
   anchoMinimo
 );
 
-  const gruposVisibles = 15;
+  const gruposVisibles = esMovil ? 7 : 15;
 
   const multiplicador = Math.max(
     1,
