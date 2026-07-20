@@ -70,6 +70,13 @@ const CANALES = {
   directo: { nombre: "Directo", color: "#64748B" }
 };
 
+const LINEAS_COMERCIALES = {
+  lanzamiento_app: "App",
+  app: "App",
+  renova: "Renova",
+  videos_tiktok: "Videos para TikTok"
+};
+
 const REDES_SOCIALES = [
   "facebook",
   "instagram",
@@ -167,6 +174,41 @@ function normalizarCanal(valor) {
 function etiquetaCanal(canal) {
   return CANALES[canal]?.nombre ||
     canal.replaceAll("_", " ").replace(/\b\w/g, letra => letra.toUpperCase());
+}
+
+function obtenerLineaComercial(visita) {
+  const campania = String(
+    visita?.campania || ""
+  ).trim().toLowerCase();
+
+  if (LINEAS_COMERCIALES[campania]) {
+    return LINEAS_COMERCIALES[campania];
+  }
+
+  if (campania.includes("renova")) {
+    return "Renova";
+  }
+
+  if (
+    campania.includes("tiktok") &&
+    campania.includes("video")
+  ) {
+    return "Videos para TikTok";
+  }
+
+  if (
+    campania.includes("app") ||
+    campania.includes("shopper")
+  ) {
+    return "App";
+  }
+
+  return campania
+    ? campania
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .replace(/\b\w/g, letra => letra.toUpperCase())
+    : "Sin línea";
 }
 
 function escapeHTML(texto) {
@@ -640,16 +682,24 @@ function renderKPIs() {
     visita => fechaISOEnPeru(visita.fecha) === hoy
   ).length;
 
-  const porCanal = contarPor(visitas, visita => visita.canal);
-  const lider = Object.entries(porCanal).sort((a, b) => b[1] - a[1])[0];
+  const porLinea = contarPor(
+  visitas,
+  visita => obtenerLineaComercial(visita)
+);
 
+const lider = Object.entries(porLinea)
+  .sort((a, b) => b[1] - a[1])[0];
   const clientesActivos = new Set(
     visitas.map(visita => visita.cliente).filter(Boolean)
   ).size;
 
   setText("totalVisitas", numero(visitas.length));
   setText("visitasHoy", numero(visitasHoy));
-  setText("canalLider", lider ? etiquetaCanal(lider[0]) : "Sin datos");
+  setText(
+  "canalLider",
+  lider ? lider[0] : "Sin datos"
+);
+
   setText(
   "detalleCanalLider",
   lider ? `${numero(lider[1])} visitas en OmegaHub` : "Aún sin tráfico registrado"
