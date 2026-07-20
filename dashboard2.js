@@ -440,8 +440,28 @@ function renderGraficoHorario() {
         },
 
         tooltip: {
-          enabled: false
-        }
+  enabled: !esMovil,
+
+  callbacks: {
+    title(elementos) {
+      const indice = elementos[0]?.dataIndex;
+
+      if (indice === undefined) {
+        return "";
+      }
+
+      return `${labels[indice]} de julio`;
+    },
+
+    label(contexto) {
+      const valor = Number(contexto.raw || 0);
+
+      return `${numero(valor)} ${
+        valor === 1 ? "visita" : "visitas"
+      }`;
+    }
+  }
+}
       }
     }
   });
@@ -748,6 +768,71 @@ function renderEscalaVertical(maximo, paso) {
   `;
 }
 
+/*
+ * Muestra sobre cada grupo de barras el total exacto
+ * de visitas registradas durante ese día.
+ */
+const etiquetasTotalesPorDia = {
+  id: "etiquetasTotalesPorDia",
+
+  afterDatasetsDraw(chart) {
+    const { ctx, data } = chart;
+
+    if (!data.labels?.length || !data.datasets?.length) {
+      return;
+    }
+
+    ctx.save();
+
+    ctx.fillStyle = "#f8fafc";
+    ctx.font = "700 12px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+
+    data.labels.forEach((_, indiceDia) => {
+      let totalDia = 0;
+      let sumaPosicionesX = 0;
+      let cantidadBarrasVisibles = 0;
+      let posicionSuperior = Number.POSITIVE_INFINITY;
+
+      data.datasets.forEach((dataset, indiceDataset) => {
+        const valor = Number(dataset.data[indiceDia] || 0);
+        totalDia += valor;
+
+        const meta = chart.getDatasetMeta(indiceDataset);
+        const barra = meta.data[indiceDia];
+
+        if (!barra || valor <= 0) {
+          return;
+        }
+
+        sumaPosicionesX += barra.x;
+        cantidadBarrasVisibles += 1;
+        posicionSuperior = Math.min(posicionSuperior, barra.y);
+      });
+
+      if (
+        totalDia <= 0 ||
+        cantidadBarrasVisibles === 0 ||
+        !Number.isFinite(posicionSuperior)
+      ) {
+        return;
+      }
+
+      const posicionCentralX =
+        sumaPosicionesX / cantidadBarrasVisibles;
+
+      ctx.fillText(
+        numero(totalDia),
+        posicionCentralX,
+        posicionSuperior - 8
+      );
+    });
+
+    ctx.restore();
+  }
+};
+
 function renderGraficoDias() {
   console.log("Entró a renderGraficoDias");
  const canvas = $("chartDias");
@@ -930,9 +1015,13 @@ const anchoVisible = Math.max(
   }
 
   OmegaHub.chartDias = new Chart(canvas, {
-    type: "bar",
+  type: "bar",
 
-    data: {
+  plugins: [
+    etiquetasTotalesPorDia
+  ],
+
+  data: {
       labels,
       datasets
     },
@@ -940,6 +1029,11 @@ const anchoVisible = Math.max(
     options: {
   responsive: true,
   maintainAspectRatio: false,
+  layout: {
+  padding: {
+    top: 26
+  }
+},
 
   /*
    * Evita redibujos continuos cuando las barras del navegador
