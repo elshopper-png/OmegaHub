@@ -317,6 +317,9 @@ function renderGraficoHorario() {
   }
 
   const visitas = visitasDelPeriodoSeleccionado();
+  const esMovil = window.matchMedia(
+  "(max-width: 768px)"
+).matches;
 
   const horarios = {
   madrugada: 0,
