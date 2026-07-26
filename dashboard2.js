@@ -520,27 +520,56 @@ async function cargarDatos() {
 
   setEstado("Conectando...", "cargando");
 
-  let consulta = supabaseClient
-    .from("visitas")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const TAMANO_PAGINA = 1000;
+  const MAXIMO_PAGINAS = 50;
 
-  if (OmegaHub.modoCliente) {
-    consulta = consulta.eq(
-      "cliente",
-      OmegaHub.clienteActivo
-    );
+  let todasLasVisitas = [];
+  let pagina = 0;
+
+  while (pagina < MAXIMO_PAGINAS) {
+    const desde = pagina * TAMANO_PAGINA;
+    const hasta = desde + TAMANO_PAGINA - 1;
+
+    let consulta = supabaseClient
+      .from("visitas")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(desde, hasta);
+
+    if (OmegaHub.modoCliente) {
+      consulta = consulta.eq(
+        "cliente",
+        OmegaHub.clienteActivo
+      );
+    }
+
+    const { data, error } = await consulta;
+
+    if (error) {
+      console.error(
+        `Error cargando visitas en página ${pagina + 1}:`,
+        error
+      );
+      setEstado("Error de conexión", "error");
+      return;
+    }
+
+    const lote = data || [];
+    todasLasVisitas.push(...lote);
+
+    if (lote.length < TAMANO_PAGINA) {
+      break;
+    }
+
+    pagina++;
   }
 
-  const { data, error } = await consulta;
+  OmegaHub.visitas = todasLasVisitas.map(normalizarVisita);
 
-  if (error) {
-    console.error("Error cargando visitas:", error);
-    setEstado("Error de conexión", "error");
-    return;
-  }
+  console.log(
+    `Picapiedra cargó ${OmegaHub.visitas.length} visitas`
+  );
 
-  OmegaHub.visitas = (data || []).map(normalizarVisita);
   setEstado("OmegaHub conectado", "ok");
   renderTodo();
 }
