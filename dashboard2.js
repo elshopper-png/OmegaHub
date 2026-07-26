@@ -520,47 +520,68 @@ async function cargarDatos() {
 
   setEstado("Conectando...", "cargando");
 
-  const TAMANO_PAGINA = 1000;
-  let desde = 0;
-  let todasLasVisitas = [];
-  let seguirCargando = true;
+  let consulta = supabaseClient
+    .from("visitas")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  while (seguirCargando) {
-    let consulta = supabaseClient
-      .from("visitas")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .range(desde, desde + TAMANO_PAGINA - 1);
-
-    if (OmegaHub.modoCliente) {
-      consulta = consulta.eq(
-        "cliente",
-        OmegaHub.clienteActivo
-      );
-    }
-
-    const { data, error } = await consulta;
-
-    if (error) {
-      console.error("Error cargando visitas:", error);
-      setEstado("Error de conexión", "error");
-      return;
-    }
-
-    const lote = data || [];
-    todasLasVisitas.push(...lote);
-
-    if (lote.length < TAMANO_PAGINA) {
-      seguirCargando = false;
-    } else {
-      desde += TAMANO_PAGINA;
-    }
+  if (OmegaHub.modoCliente) {
+    consulta = consulta.eq(
+      "cliente",
+      OmegaHub.clienteActivo
+    );
   }
 
-  OmegaHub.visitas = todasLasVisitas.map(normalizarVisita);
+  const { data, error } = await consulta;
 
+  if (error) {
+    console.error("Error cargando visitas:", error);
+    setEstado("Error de conexión", "error");
+    return;
+  }
+
+  OmegaHub.visitas = (data || []).map(normalizarVisita);
   setEstado("OmegaHub conectado", "ok");
   renderTodo();
+}
+
+function renderTodo() {
+  if (typeof renderFechaHora === "function") {
+    renderFechaHora();
+  }
+
+  renderSelectorClientes();
+  renderHeaderCliente();
+  renderKPIs();
+  renderGraficoDias();
+  renderCanales();
+  renderGraficoHorario();
+  renderActividad();
+  renderTabla();
+}
+
+function renderFechaHora() {
+  const ahora = new Date();
+
+  const fecha = ahora.toLocaleDateString("es-PE", {
+    timeZone: "America/Lima",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+
+  setText("fechaHoy", fecha.charAt(0).toUpperCase() + fecha.slice(1));
+
+  setText(
+    "horaPeru",
+    ahora.toLocaleTimeString("es-PE", {
+      timeZone: "America/Lima",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    })
+  );
 }
 
 function renderSelectorClientes() {
@@ -1288,21 +1309,25 @@ function renderTabla() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  renderFechaHora();
-  setInterval(renderFechaHora, 1000);
+  if (typeof renderFechaHora === "function") {
+    renderFechaHora();
+    setInterval(() => {
+      renderFechaHora();
+    }, 1000);
+  }
 
   const selectorPeriodo = $("selectorPeriodo");
 
-if (selectorPeriodo) {
-  selectorPeriodo.onchange = () => {
-    OmegaHub.periodoActivo =
-      selectorPeriodo.value;
-
-    renderGraficoHorario();
-  };
-}
+  if (selectorPeriodo) {
+    selectorPeriodo.onchange = () => {
+      OmegaHub.periodoActivo = selectorPeriodo.value;
+      renderGraficoHorario();
+    };
+  }
 
   await cargarDatos();
 
-  setInterval(cargarDatos, OmegaHub.refrescoMs);
+  setInterval(() => {
+    cargarDatos();
+  }, OmegaHub.refrescoMs);
 });
