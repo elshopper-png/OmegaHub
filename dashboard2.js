@@ -520,65 +520,47 @@ async function cargarDatos() {
 
   setEstado("Conectando...", "cargando");
 
-  let consulta = supabaseClient
-    .from("visitas")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const TAMANO_PAGINA = 1000;
+  let desde = 0;
+  let todasLasVisitas = [];
+  let seguirCargando = true;
 
-  if (OmegaHub.modoCliente) {
-    consulta = consulta.eq(
-      "cliente",
-      OmegaHub.clienteActivo
-    );
+  while (seguirCargando) {
+    let consulta = supabaseClient
+      .from("visitas")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(desde, desde + TAMANO_PAGINA - 1);
+
+    if (OmegaHub.modoCliente) {
+      consulta = consulta.eq(
+        "cliente",
+        OmegaHub.clienteActivo
+      );
+    }
+
+    const { data, error } = await consulta;
+
+    if (error) {
+      console.error("Error cargando visitas:", error);
+      setEstado("Error de conexión", "error");
+      return;
+    }
+
+    const lote = data || [];
+    todasLasVisitas.push(...lote);
+
+    if (lote.length < TAMANO_PAGINA) {
+      seguirCargando = false;
+    } else {
+      desde += TAMANO_PAGINA;
+    }
   }
 
-  const { data, error } = await consulta;
+  OmegaHub.visitas = todasLasVisitas.map(normalizarVisita);
 
-  if (error) {
-    console.error("Error cargando visitas:", error);
-    setEstado("Error de conexión", "error");
-    return;
-  }
-
-  OmegaHub.visitas = (data || []).map(normalizarVisita);
   setEstado("OmegaHub conectado", "ok");
   renderTodo();
-}
-
-function renderTodo() {
-    renderFechaHora();
-    renderSelectorClientes();
-    renderHeaderCliente();
-    renderKPIs();
-    renderGraficoDias();
-    renderCanales();
-    renderGraficoHorario();   // ← nueva línea
-    renderActividad();
-    renderTabla();
-}
-
-function renderFechaHora() {
-  const ahora = new Date();
-
-  const fecha = ahora.toLocaleDateString("es-PE", {
-    timeZone: "America/Lima",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
-
-  setText("fechaHoy", fecha.charAt(0).toUpperCase() + fecha.slice(1));
-
-  setText(
-    "horaPeru",
-    ahora.toLocaleTimeString("es-PE", {
-      timeZone: "America/Lima",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    })
-  );
 }
 
 function renderSelectorClientes() {
