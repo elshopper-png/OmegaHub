@@ -771,32 +771,36 @@ function renderLeyendaGrafico() {
   const contenedor = $("chartLegend");
   if (!contenedor) return;
 
-  const visitas = visitasFiltradas();
+  /*
+   * La leyenda utiliza exactamente el período
+   * seleccionado en el dashboard.
+   */
+  const visitasPeriodo =
+    visitasDelPeriodoSeleccionado();
 
   const totalesPorCampania = contarPor(
-    visitas,
+    visitasPeriodo,
     visita => obtenerLineaComercial(visita)
   );
 
-  const campaniasActivas = Object.entries(totalesPorCampania)
+  const campaniasActivas = Object.entries(
+    totalesPorCampania
+  )
     .filter(([, total]) => total > 0)
-    .sort((a, b) => b[1] - a[1]);
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
 
   const coloresCampanias = [
     "#38bdf8",
     "#f59e0b",
     "#8b5cf6",
-    "#22c55e",
-    "#ec4899",
-    "#ef4444",
-    "#14b8a6",
-    "#eab308"
+    "#22c55e"
   ];
 
   if (!campaniasActivas.length) {
     contenedor.innerHTML = `
       <span class="chart-legend-name">
-        Sin campañas registradas
+        Sin campañas registradas en este período
       </span>
     `;
 
@@ -807,7 +811,9 @@ function renderLeyendaGrafico() {
   contenedor.innerHTML = campaniasActivas
     .map(([campania, total], indice) => {
       const color =
-        coloresCampanias[indice % coloresCampanias.length];
+        coloresCampanias[
+          indice % coloresCampanias.length
+        ];
 
       return `
         <span class="chart-legend-item">
@@ -983,99 +989,146 @@ function renderGraficoDias() {
     return;
   }
 
-  const visitas = visitasDelPeriodoSeleccionado();
-const dias = [];
-
-const hoyPeru = fechaISOEnPeru();
-const periodo = OmegaHub.periodoActivo;
-
-/*
- * HOY:
- * una sola posición, identificada con la fecha actual.
- */
-if (periodo === "hoy") {
-  dias.push(hoyPeru);
-}
-
-/*
- * SEMANA:
- * muestra de lunes a domingo.
- * Los días futuros permanecen en cero.
- */
-if (periodo === "semana") {
-  const fechaHoy = new Date(
-    `${hoyPeru}T12:00:00-05:00`
-  );
-
-  const diaSemana = fechaHoy.getDay();
-
-  const retroceso =
-    diaSemana === 0
-      ? 6
-      : diaSemana - 1;
-
-  const inicioSemana = new Date(fechaHoy);
-
-  inicioSemana.setDate(
-    inicioSemana.getDate() - retroceso
-  );
-
-  for (let indice = 0; indice < 7; indice += 1) {
-    const fechaSemana = new Date(inicioSemana);
-
-    fechaSemana.setDate(
-      inicioSemana.getDate() + indice
-    );
-
-    dias.push(
-      fechaISOEnPeru(fechaSemana)
-    );
-  }
-}
-
-/*
- * MES:
- * muestra todos los días del mes actual.
- */
-if (periodo === "mes") {
-  const [anioActual, mesActual] = hoyPeru
-    .split("-")
-    .map(Number);
-
-  const ultimoDiaDelMes = new Date(
-    anioActual,
-    mesActual,
-    0
-  ).getDate();
-
-  for (
-    let numeroDia = 1;
-    numeroDia <= ultimoDiaDelMes;
-    numeroDia += 1
-  ) {
-    dias.push(
-      `${anioActual}-${String(mesActual).padStart(2, "0")}-${String(numeroDia).padStart(2, "0")}`
-    );
-  }
-}
-
-/*
- * AÑO:
- * exactamente doce posiciones, una por cada mes.
- */
-if (periodo === "anio") {
-  const anioActual = hoyPeru.slice(0, 4);
-
-  for (let mes = 1; mes <= 12; mes += 1) {
-    dias.push(
-      `${anioActual}-${String(mes).padStart(2, "0")}-01`
-    );
-  }
-}
+  const periodo = OmegaHub.periodoActivo;
+  const hoyPeru = fechaISOEnPeru();
 
   /*
-   * Paleta fija para un máximo de cuatro campañas.
-   * Mantiene el mismo orden visual de la tarjeta superior.
+   * Solo utilizamos las visitas correspondientes
+   * al período actualmente seleccionado.
+   */
+  const visitasPeriodo =
+    visitasDelPeriodoSeleccionado();
+
+  /*
+   * Las visitas generales del cliente se usan únicamente
+   * para conservar siempre el mismo orden y color
+   * de las campañas.
+   */
+  const visitasGenerales =
+    visitasFiltradas();
+
+  const categorias = [];
+
+  /*
+   * HOY:
+   * una única categoría correspondiente al día actual.
+   */
+  if (periodo === "hoy") {
+    categorias.push({
+      clave: hoyPeru,
+      etiqueta: formatearEtiquetaHoy(hoyPeru)
+    });
+  }
+
+  /*
+   * SEMANA:
+   * siete categorías, de lunes a domingo.
+   */
+  if (periodo === "semana") {
+    const fechaHoy = new Date(
+      `${hoyPeru}T12:00:00-05:00`
+    );
+
+    const diaSemana = fechaHoy.getDay();
+
+    const retroceso =
+      diaSemana === 0
+        ? 6
+        : diaSemana - 1;
+
+    const inicioSemana = new Date(fechaHoy);
+
+    inicioSemana.setDate(
+      inicioSemana.getDate() - retroceso
+    );
+
+    for (
+      let indice = 0;
+      indice < 7;
+      indice += 1
+    ) {
+      const fechaCategoria =
+        new Date(inicioSemana);
+
+      fechaCategoria.setDate(
+        inicioSemana.getDate() + indice
+      );
+
+      const fechaISO =
+        fechaISOEnPeru(fechaCategoria);
+
+      categorias.push({
+        clave: fechaISO,
+        etiqueta: formatearEtiquetaSemana(
+          fechaISO
+        )
+      });
+    }
+  }
+
+  /*
+   * MES:
+   * una categoría por cada día del mes actual.
+   */
+  if (periodo === "mes") {
+    const [anioActual, mesActual] =
+      hoyPeru.split("-").map(Number);
+
+    const ultimoDiaDelMes = new Date(
+      anioActual,
+      mesActual,
+      0
+    ).getDate();
+
+    for (
+      let numeroDia = 1;
+      numeroDia <= ultimoDiaDelMes;
+      numeroDia += 1
+    ) {
+      const fechaISO =
+        `${anioActual}-` +
+        `${String(mesActual).padStart(2, "0")}-` +
+        `${String(numeroDia).padStart(2, "0")}`;
+
+      categorias.push({
+        clave: fechaISO,
+        etiqueta:
+          String(numeroDia).padStart(2, "0")
+      });
+    }
+  }
+
+  /*
+   * AÑO:
+   * exactamente doce categorías, una por mes.
+   */
+  if (periodo === "anio") {
+    const anioActual =
+      hoyPeru.slice(0, 4);
+
+    const nombresMeses = [
+      "Ene", "Feb", "Mar", "Abr",
+      "May", "Jun", "Jul", "Ago",
+      "Sep", "Oct", "Nov", "Dic"
+    ];
+
+    for (
+      let mes = 1;
+      mes <= 12;
+      mes += 1
+    ) {
+      const mesTexto =
+        String(mes).padStart(2, "0");
+
+      categorias.push({
+        clave: `${anioActual}-${mesTexto}`,
+        etiqueta: nombresMeses[mes - 1]
+      });
+    }
+  }
+
+  /*
+   * Máximo operativo aprobado: cuatro campañas.
    */
   const coloresCampanias = [
     "#38bdf8",
@@ -1085,159 +1138,116 @@ if (periodo === "anio") {
   ];
 
   /*
-   * Calculamos el orden general de las campañas.
-   * La campaña con mayor tráfico ocupa el primer color.
+   * Orden general y permanente de las campañas.
+   * Esto evita que una campaña cambie de color
+   * al seleccionar otro período.
    */
-  const totalesGeneralesPorCampania = contarPor(
-    visitas,
+  const totalesGenerales = contarPor(
+    visitasGenerales,
     visita => obtenerLineaComercial(visita)
   );
 
-  const ordenGeneralCampanias = Object.entries(
-    totalesGeneralesPorCampania
-  )
-    .filter(([, total]) => total > 0)
-    .sort((a, b) => b[1] - a[1])
-    .map(([campania]) => campania);
+  const ordenGeneralCampanias =
+    Object.entries(totalesGenerales)
+      .filter(([, total]) => total > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([campania]) => campania)
+      .slice(0, 4);
 
   /*
-   * Detectamos las campañas que tienen tráfico
-   * dentro del mes mostrado.
+   * Campañas con actividad dentro del período.
    */
   const campaniasDelPeriodo = [
-  ...new Set(
-    visitas
-      .filter(visita => visita.fecha)
-      .map(visita =>
-        obtenerLineaComercial(visita)
-      )
-      .filter(Boolean)
-  )
-];
+    ...new Set(
+      visitasPeriodo
+        .map(visita =>
+          obtenerLineaComercial(visita)
+        )
+        .filter(Boolean)
+    )
+  ];
 
-/*
- * Conservamos el orden general y aplicamos
- * el máximo operativo de cuatro campañas.
- */
-const campaniasActivas = ordenGeneralCampanias
-  .filter(campania =>
-    campaniasDelPeriodo.includes(campania)
-  )
-  .slice(0, 4);
-  /*
-   * Matriz diaria:
-   *
-   * 2026-08-03:
-   *   App Lanzamiento: 2
-   *   App Usuarios: 2
-   */
-  const traficoPorDia = {};
-
-  dias.forEach(dia => {
-    traficoPorDia[dia] = Object.fromEntries(
-      campaniasActivas.map(campania => [
-        campania,
-        0
-      ])
+  const campaniasActivas =
+    ordenGeneralCampanias.filter(
+      campania =>
+        campaniasDelPeriodo.includes(campania)
     );
+
+  /*
+   * Inicializamos la matriz de tráfico.
+   */
+  const traficoPorCategoria = {};
+
+  categorias.forEach(categoria => {
+    traficoPorCategoria[categoria.clave] =
+      Object.fromEntries(
+        campaniasActivas.map(campania => [
+          campania,
+          0
+        ])
+      );
   });
 
   /*
-   * Sumamos cada registro en su día
-   * y en su campaña correspondiente.
+   * Sumamos cada visita en la categoría correcta.
+   *
+   * Hoy, Semana y Mes: YYYY-MM-DD
+   * Año: YYYY-MM
    */
-  visitas.forEach(visita => {
-  if (!visita.fecha) return;
+  visitasPeriodo.forEach(visita => {
+    if (!visita.fecha) return;
 
-  let clave;
+    const fecha =
+      fechaISOEnPeru(visita.fecha);
 
-  if (periodo === "anio") {
-    const fecha = fechaISOEnPeru(visita.fecha);
+    const clave =
+      periodo === "anio"
+        ? fecha.slice(0, 7)
+        : fecha;
 
-    clave = `${fecha.slice(0, 7)}-01`;
-  } else {
-    clave = fechaISOEnPeru(visita.fecha);
-  }
+    const campania =
+      obtenerLineaComercial(visita);
 
-  const campania = obtenerLineaComercial(visita);
-
-  if (
-    traficoPorDia[clave] &&
-    campaniasActivas.includes(campania)
-  ) {
-    traficoPorDia[clave][campania] += 1;
-  }
-});
+    if (
+      traficoPorCategoria[clave] &&
+      campaniasActivas.includes(campania)
+    ) {
+      traficoPorCategoria[clave][campania] += 1;
+    }
+  });
 
   /*
-   * La tarjeta superior mantiene su propio resumen dinámico.
+   * Actualiza la tarjeta de campañas.
    */
   renderLeyendaGrafico();
 
-  const nombresMeses = [
-  "Ene", "Feb", "Mar", "Abr",
-  "May", "Jun", "Jul", "Ago",
-  "Sep", "Oct", "Nov", "Dic"
-];
-
-const nombresDias = [
-  "Dom", "Lun", "Mar", "Mié",
-  "Jue", "Vie", "Sáb"
-];
-
-const labels = dias.map(dia => {
-  const fecha = new Date(
-    `${dia}T12:00:00-05:00`
+  const labels = categorias.map(
+    categoria => categoria.etiqueta
   );
 
-  if (periodo === "hoy") {
-    const numeroDia = dia.slice(8, 10);
-    const indiceMes =
-      Number(dia.slice(5, 7)) - 1;
-
-    return `${numeroDia} ${nombresMeses[indiceMes]}`;
-  }
-
-  if (periodo === "semana") {
-    const nombreDia =
-      nombresDias[fecha.getDay()];
-
-    const numeroDia =
-      dia.slice(8, 10);
-
-    return `${nombreDia} ${numeroDia}`;
-  }
-
-  if (periodo === "anio") {
-    const indiceMes =
-      Number(dia.slice(5, 7)) - 1;
-
-    return nombresMeses[indiceMes];
-  }
-
-  return dia.slice(8, 10);
-});
-
-  /*
-   * Construimos una serie de barras por cada campaña.
-   */
   const datasets = campaniasActivas.map(
-    (campania, indice) => {
+    campania => {
       const posicionColor =
         ordenGeneralCampanias.indexOf(campania);
 
       const indiceColor =
         posicionColor >= 0
-          ? posicionColor % coloresCampanias.length
-          : indice % coloresCampanias.length;
+          ? posicionColor %
+            coloresCampanias.length
+          : 0;
 
-      const color = coloresCampanias[indiceColor];
+      const color =
+        coloresCampanias[indiceColor];
 
       return {
         label: campania,
 
-        data: dias.map(dia =>
-          traficoPorDia[dia][campania]
+        data: categorias.map(categoria =>
+          Number(
+            traficoPorCategoria[
+              categoria.clave
+            ]?.[campania] || 0
+          )
         ),
 
         backgroundColor: color,
@@ -1249,29 +1259,29 @@ const labels = dias.map(dia => {
         barThickness: esMovil ? 22 : 32,
         maxBarThickness: esMovil ? 24 : 34,
 
-        categoryPercentage: esMovil
-          ? 0.84
-          : 0.9,
+        categoryPercentage:
+          esMovil ? 0.84 : 0.9,
 
-        barPercentage: esMovil
-          ? 0.86
-          : 0.9
+        barPercentage:
+          esMovil ? 0.86 : 0.9
       };
     }
   );
 
   /*
-   * La escala considera el total diario de todas
-   * las campañas, no únicamente la barra más alta.
+   * La escala se calcula usando el total combinado
+   * de todas las campañas en cada categoría.
    */
   const maximoReal = Math.max(
     0,
-    ...dias.map(dia =>
+    ...categorias.map(categoria =>
       campaniasActivas.reduce(
         (total, campania) =>
           total +
           Number(
-            traficoPorDia[dia][campania] || 0
+            traficoPorCategoria[
+              categoria.clave
+            ]?.[campania] || 0
           ),
         0
       )
@@ -1287,24 +1297,31 @@ const labels = dias.map(dia => {
   );
 
   /*
-   * Configuramos el desplazamiento horizontal.
+   * Control del desplazamiento horizontal.
+   * Hoy, Semana y Año caben en una vista.
+   * El mes conserva el desplazamiento.
    */
-  const anchoMinimo = esMovil ? 360 : 700;
+  const anchoMinimo =
+    esMovil ? 360 : 700;
 
   const anchoVisible = Math.max(
     scroll.clientWidth,
     anchoMinimo
   );
 
-  const gruposVisibles =
-    esMovil ? 7 : 15;
+  let multiplicador = 1;
 
-  const multiplicador = Math.max(
-    1,
-    Math.ceil(
-      dias.length / gruposVisibles
-    )
-  );
+  if (periodo === "mes") {
+    const gruposVisibles =
+      esMovil ? 7 : 16;
+
+    multiplicador = Math.max(
+      1,
+      Math.ceil(
+        categorias.length / gruposVisibles
+      )
+    );
+  }
 
   canvasWrap.style.width =
     `${anchoVisible * multiplicador}px`;
@@ -1335,32 +1352,34 @@ const labels = dias.map(dia => {
         }
       },
 
-      resizeDelay: esMovil
-        ? 400
-        : 150,
+      resizeDelay:
+        esMovil ? 400 : 150,
 
-      devicePixelRatio: esMovil
-        ? 1
-        : Math.min(
-            window.devicePixelRatio || 1,
-            2
-          ),
+      devicePixelRatio:
+        esMovil
+          ? 1
+          : Math.min(
+              window.devicePixelRatio || 1,
+              2
+            ),
 
-      animation: esMovil
-        ? false
-        : {
-            duration: 300
-          },
+      animation:
+        esMovil
+          ? false
+          : {
+              duration: 300
+            },
 
-      events: esMovil
-        ? []
-        : [
-            "mousemove",
-            "mouseout",
-            "click",
-            "touchstart",
-            "touchmove"
-          ],
+      events:
+        esMovil
+          ? []
+          : [
+              "mousemove",
+              "mouseout",
+              "click",
+              "touchstart",
+              "touchmove"
+            ],
 
       interaction: {
         mode: "nearest",
@@ -1424,94 +1443,199 @@ const labels = dias.map(dia => {
   });
 
   scroll.scrollLeft = 0;
+
+  /*
+   * Funciones internas de formato.
+   */
+  function formatearEtiquetaHoy(fechaISO) {
+    const nombresMeses = [
+      "Ene", "Feb", "Mar", "Abr",
+      "May", "Jun", "Jul", "Ago",
+      "Sep", "Oct", "Nov", "Dic"
+    ];
+
+    const dia =
+      fechaISO.slice(8, 10);
+
+    const indiceMes =
+      Number(fechaISO.slice(5, 7)) - 1;
+
+    return `${dia} ${nombresMeses[indiceMes]}`;
+  }
+
+  function formatearEtiquetaSemana(fechaISO) {
+    const nombresDias = [
+      "Dom", "Lun", "Mar", "Mié",
+      "Jue", "Vie", "Sáb"
+    ];
+
+    const fecha = new Date(
+      `${fechaISO}T12:00:00-05:00`
+    );
+
+    const nombreDia =
+      nombresDias[fecha.getDay()];
+
+    const dia =
+      fechaISO.slice(8, 10);
+
+    return `${nombreDia} ${dia}`;
+  }
 }
+
 function renderCanales() {
   const contenedor = $("canalesResumen");
   if (!contenedor) return;
 
   /*
-   * Tomamos únicamente los registros del cliente seleccionado
-   * correspondientes al mes actual en horario de Perú.
+   * Todos los canales utilizan exactamente
+   * el período seleccionado en el dashboard.
    */
-  const hoyPeru = fechaISOEnPeru();
-  const mesActual = hoyPeru.slice(0, 7);
-
-  const visitasDelMes = visitasFiltradas().filter(visita => {
-    if (!visita.fecha) return false;
-
-    return fechaISOEnPeru(visita.fecha).slice(0, 7) === mesActual;
-  });
+  const visitasPeriodo =
+    visitasDelPeriodoSeleccionado();
 
   const datos = contarPor(
-    visitasDelMes,
+    visitasPeriodo,
     visita => visita.canal
   );
 
-  /*
-   * Las cuatro redes aparecen siempre y mantienen
-   * permanentemente el mismo orden.
-   */
   const canalesMostrar = Object.keys(datos)
-  .filter(canal => datos[canal] > 0)
-  .sort((a, b) => datos[b] - datos[a]);
+    .filter(canal => datos[canal] > 0)
+    .sort((a, b) => datos[b] - datos[a]);
 
-  contenedor.innerHTML = canalesMostrar.map(canal => {
-const visual = CANALES[canal] || {
-  nombre: etiquetaCanal(canal),
-  color: "#64748B"
-};    
+  const textosPeriodo = {
+    hoy: {
+      singular: "visita registrada hoy",
+      plural: "visitas registradas hoy"
+    },
 
-const total = datos[canal] || 0;
+    semana: {
+      singular: "visita registrada esta semana",
+      plural: "visitas registradas esta semana"
+    },
 
-    return `
-      <article
-        class="channel-card"
-        style="--channel-color:${visual.color}"
-      >
-        <div class="channel-name">
-          <span class="channel-dot"></span>
-          ${escapeHTML(visual.nombre)}
-        </div>
+    mes: {
+      singular: "visita registrada este mes",
+      plural: "visitas registradas este mes"
+    },
 
-        <strong>${numero(total)}</strong>
+    anio: {
+      singular: "visita registrada este año",
+      plural: "visitas registradas este año"
+    }
+  };
 
-        <small>
-          <small>
-  ${total === 1
-    ? "visita registrada"
-    : "visitas registradas en el mes"}
-</small>
-      </article>
+  const textoPeriodo =
+    textosPeriodo[OmegaHub.periodoActivo] ||
+    textosPeriodo.hoy;
+
+  if (!canalesMostrar.length) {
+    contenedor.innerHTML = `
+      <div class="empty-state">
+        No hay tráfico por canal en este período.
+      </div>
     `;
-  }).join("");
+
+    return;
+  }
+
+  contenedor.innerHTML = canalesMostrar
+    .map(canal => {
+      const visual = CANALES[canal] || {
+        nombre: etiquetaCanal(canal),
+        color: "#64748B"
+      };
+
+      const total = datos[canal] || 0;
+
+      return `
+        <article
+          class="channel-card"
+          style="--channel-color:${visual.color}"
+        >
+          <div class="channel-name">
+            <span class="channel-dot"></span>
+
+            ${escapeHTML(visual.nombre)}
+          </div>
+
+          <strong>
+            ${numero(total)}
+          </strong>
+
+          <small>
+            ${
+              total === 1
+                ? textoPeriodo.singular
+                : textoPeriodo.plural
+            }
+          </small>
+        </article>
+      `;
+    })
+    .join("");
 }
 
 function renderActividad() {
-  const visitas = visitasFiltradas();
+  /*
+   * La actividad utiliza el mismo período
+   * seleccionado en todo el dashboard.
+   */
+  const visitas =
+    visitasDelPeriodoSeleccionado();
 
   if (!visitas.length) {
-    setText("ultimaVisitaTiempo", "Sin registro");
-    setText("ultimaVisitaDetalle", "Esperando actividad");
-    setText("visitasEnVivo", "0 personas");
+    setText(
+      "ultimaVisitaTiempo",
+      "Sin registro"
+    );
+
+    setText(
+      "ultimaVisitaDetalle",
+      "Esperando actividad"
+    );
+
+    setText(
+      "visitasEnVivo",
+      "0 personas"
+    );
+
     return;
   }
 
   const ultima = visitas[0];
 
-  setText("ultimaVisitaTiempo", fechaPeru(ultima.fecha));
   setText(
-    "ultimaVisitaDetalle",
-    `${ultima.cliente} · ${etiquetaCanal(ultima.canal)} · ${ultima.campania}`
+    "ultimaVisitaTiempo",
+    fechaPeru(ultima.fecha)
   );
 
-  const limite = Date.now() - (5 * 60 * 1000);
+  setText(
+    "ultimaVisitaDetalle",
+    `${ultima.cliente} · ` +
+    `${etiquetaCanal(ultima.canal)} · ` +
+    `${ultima.campania}`
+  );
+
+  /*
+   * El dato “en vivo” continúa considerando
+   * únicamente los últimos cinco minutos.
+   */
+  const limite =
+    Date.now() - (5 * 60 * 1000);
+
   const activas = visitas.filter(
-    visita => new Date(visita.fecha).getTime() >= limite
+    visita =>
+      new Date(visita.fecha).getTime() >= limite
   ).length;
 
   setText(
     "visitasEnVivo",
-    `${numero(activas)} ${activas === 1 ? "persona" : "personas"}`
+    `${numero(activas)} ${
+      activas === 1
+        ? "persona"
+        : "personas"
+    }`
   );
 }
 
@@ -1519,29 +1643,73 @@ function renderTabla() {
   const tbody = $("ultimasVisitasBody");
   if (!tbody) return;
 
-  const visitas = visitasFiltradas().slice(0, 5);
+  /*
+   * La tabla respeta el mismo período
+   * seleccionado en todo el dashboard.
+   */
+  const visitas = visitasDelPeriodoSeleccionado()
+    .slice(0, 5);
 
   if (!visitas.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No hay visitas registradas.</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td
+          colspan="6"
+          class="empty-state"
+        >
+          No hay visitas registradas en este período.
+        </td>
+      </tr>
+    `;
+
     return;
   }
 
-  tbody.innerHTML = visitas.map(visita => {
-    const destino = visita.destino
-      ? `<a href="${escapeHTML(visita.destino)}" target="_blank" rel="noopener noreferrer">Abrir</a>`
-      : "Sin destino";
+  tbody.innerHTML = visitas
+    .map(visita => {
+      const destino = visita.destino
+        ? `
+          <a
+            href="${escapeHTML(visita.destino)}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir
+          </a>
+        `
+        : "Sin destino";
 
-    return `
-      <tr>
-        <td>${escapeHTML(fechaPeru(visita.fecha))}</td>
-        <td>${escapeHTML(visita.cliente)}</td>
-        <td>${escapeHTML(etiquetaCanal(visita.canal))}</td>
-        <td>${escapeHTML(visita.campania)}</td>
-        <td>${escapeHTML(visita.dispositivo)}</td>
-        <td>${destino}</td>
-      </tr>
-    `;
-  }).join("");
+      return `
+        <tr>
+          <td>
+            ${escapeHTML(fechaPeru(visita.fecha))}
+          </td>
+
+          <td>
+            ${escapeHTML(visita.cliente)}
+          </td>
+
+          <td>
+            ${escapeHTML(
+              etiquetaCanal(visita.canal)
+            )}
+          </td>
+
+          <td>
+            ${escapeHTML(visita.campania)}
+          </td>
+
+          <td>
+            ${escapeHTML(visita.dispositivo)}
+          </td>
+
+          <td>
+            ${destino}
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
