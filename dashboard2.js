@@ -1035,17 +1035,13 @@ if (periodo === "mes") {
 }
 
 if (periodo === "anio") {
-  const fechasConActividad = [
-    ...new Set(
-      visitas
-        .filter(visita => visita.fecha)
-        .map(visita =>
-          fechaISOEnPeru(visita.fecha)
-        )
-    )
-  ].sort();
+  const anioActual = hoyPeru.slice(0, 4);
 
-  dias.push(...fechasConActividad);
+  for (let mes = 1; mes <= 12; mes++) {
+    dias.push(
+      `${anioActual}-${String(mes).padStart(2, "0")}-01`
+    );
+  }
 }
 
   /*
@@ -1127,18 +1123,27 @@ if (periodo === "anio") {
    * y en su campaña correspondiente.
    */
   visitas.forEach(visita => {
-    if (!visita.fecha) return;
+  if (!visita.fecha) return;
 
-    const dia = fechaISOEnPeru(visita.fecha);
-    const campania = obtenerLineaComercial(visita);
+  let clave;
 
-    if (
-      traficoPorDia[dia] &&
-      campaniasActivas.includes(campania)
-    ) {
-      traficoPorDia[dia][campania] += 1;
-    }
-  });
+  if (periodo === "anio") {
+    const fecha = fechaISOEnPeru(visita.fecha);
+
+    clave = `${fecha.slice(0, 7)}-01`;
+  } else {
+    clave = fechaISOEnPeru(visita.fecha);
+  }
+
+  const campania = obtenerLineaComercial(visita);
+
+  if (
+    traficoPorDia[clave] &&
+    campaniasActivas.includes(campania)
+  ) {
+    traficoPorDia[clave][campania] += 1;
+  }
+});
 
   /*
    * La tarjeta superior mantiene su propio resumen dinámico.
