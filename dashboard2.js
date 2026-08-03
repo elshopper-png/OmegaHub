@@ -953,13 +953,14 @@ const etiquetasTotalesPorDia = {
 
 function renderGraficoDias() {
   console.log("Entró a renderGraficoDias");
- const canvas = $("chartDias");
-const scroll = $("chartScroll");
-const canvasWrap = $("chartCanvasWrap");
 
-const esMovil = window.matchMedia(
-  "(max-width: 768px)"
-).matches;
+  const canvas = $("chartDias");
+  const scroll = $("chartScroll");
+  const canvasWrap = $("chartCanvasWrap");
+
+  const esMovil = window.matchMedia(
+    "(max-width: 768px)"
+  ).matches;
 
   if (
     !canvas ||
@@ -971,165 +972,221 @@ const esMovil = window.matchMedia(
   }
 
   const visitas = visitasFiltradas();
-const dias = [];
-
-/*
- * Construimos todos los días del mes actual
- * en horario de Perú: 01, 02, 03... hasta 30 o 31.
- */
-const hoyPeru = fechaISOEnPeru();
-const [anioActual, mesActual] = hoyPeru
-  .split("-")
-  .map(Number);
-
-const ultimoDiaDelMes = new Date(
-  anioActual,
-  mesActual,
-  0
-).getDate();
-
-for (let numeroDia = 1; numeroDia <= ultimoDiaDelMes; numeroDia += 1) {
-  dias.push(
-    `${anioActual}-${String(mesActual).padStart(2, "0")}-${String(numeroDia).padStart(2, "0")}`
-  );
-}
+  const dias = [];
 
   /*
-   * Matriz:
-   *
-   * 2026-07-01:
-   *   facebook: 0
-   *   instagram: 0
-   *   tiktok: 0
-   *   youtube: 0
-  /*
- * Detectamos automáticamente los canales que realmente
- * tienen visitas durante el mes mostrado.
- */
-const itemsLeyenda = [
-  ...new Set(
-    visitas
-      .filter(visita => {
-        const dia = fechaISOEnPeru(visita.fecha);
-        return dias.includes(dia);
-      })
-      .map(visita => visita.canal)
-      .filter(Boolean)
-  )
-];
+   * Construimos todos los días del mes actual
+   * usando la fecha de Perú.
+   */
+  const hoyPeru = fechaISOEnPeru();
 
-/*
- * Matriz diaria dinámica:
- * cada día contiene únicamente los canales existentes.
- */
-const traficoPorDia = {};
+  const [anioActual, mesActual] = hoyPeru
+    .split("-")
+    .map(Number);
 
-dias.forEach(dia => {
-  traficoPorDia[dia] = Object.fromEntries(
-    itemsLeyenda.map(canal => [canal, 0])
-  );
-});
+  const ultimoDiaDelMes = new Date(
+    anioActual,
+    mesActual,
+    0
+  ).getDate();
 
-/*
- * Sumamos cada visita en su día y canal correspondiente.
- */
-visitas.forEach(visita => {
-  const dia = fechaISOEnPeru(visita.fecha);
-  const canal = visita.canal;
-
-  if (
-    traficoPorDia[dia] &&
-    itemsLeyenda.includes(canal)
+  for (
+    let numeroDia = 1;
+    numeroDia <= ultimoDiaDelMes;
+    numeroDia += 1
   ) {
-    traficoPorDia[dia][canal] += 1;
+    dias.push(
+      `${anioActual}-${String(mesActual).padStart(2, "0")}-${String(numeroDia).padStart(2, "0")}`
+    );
   }
-});
-  /*
-   * Solo aparecen las redes que realmente tienen registros
-   * para el cliente y período seleccionados.
-   */
- 
-
-  renderLeyendaGrafico(itemsLeyenda);
 
   /*
-   * El eje inferior muestra únicamente el número del día.
+   * Paleta fija para un máximo de cuatro campañas.
+   * Mantiene el mismo orden visual de la tarjeta superior.
    */
-  const labels = dias.map(dia => dia.slice(-2));
+  const coloresCampanias = [
+    "#38bdf8",
+    "#f59e0b",
+    "#8b5cf6",
+    "#22c55e"
+  ];
 
   /*
-   * Construimos un conjunto de barras por cada red activa.
+   * Calculamos el orden general de las campañas.
+   * La campaña con mayor tráfico ocupa el primer color.
    */
-  const datasets = itemsLeyenda.map(canal => {
-  const claveVisual = String(
-    canal || "directo"
-  ).trim().toLowerCase();
+  const totalesGeneralesPorCampania = contarPor(
+    visitas,
+    visita => obtenerLineaComercial(visita)
+  );
 
-  const visual = CANALES[claveVisual] || {
-    nombre: String(canal || "Sin dato"),
-    color: "#38bdf8"
-  };
+  const ordenGeneralCampanias = Object.entries(
+    totalesGeneralesPorCampania
+  )
+    .filter(([, total]) => total > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([campania]) => campania);
 
-  return {
-    label: visual.nombre,
+  /*
+   * Detectamos las campañas que tienen tráfico
+   * dentro del mes mostrado.
+   */
+  const campaniasDelMes = [
+    ...new Set(
+      visitas
+        .filter(visita => {
+          if (!visita.fecha) return false;
 
-      data: dias.map(dia =>
-        traficoPorDia[dia][canal]
-      ),
+          const dia = fechaISOEnPeru(visita.fecha);
 
-      backgroundColor: visual.color,
-      borderColor: visual.color,
+          return dias.includes(dia);
+        })
+        .map(visita => obtenerLineaComercial(visita))
+        .filter(Boolean)
+    )
+  ];
 
-      borderWidth: 0,
-      borderRadius: 3,
+  /*
+   * Conservamos el orden general y aplicamos
+   * el máximo operativo de cuatro campañas.
+   */
+  const campaniasActivas = ordenGeneralCampanias
+    .filter(campania =>
+      campaniasDelMes.includes(campania)
+    )
+    .slice(0, 4);
 
-      /*
- * Barras más visibles.
- */
+  /*
+   * Matriz diaria:
+   *
+   * 2026-08-03:
+   *   App Lanzamiento: 2
+   *   App Usuarios: 2
+   */
+  const traficoPorDia = {};
 
-barThickness: esMovil ? 28 : 38,
-maxBarThickness: esMovil ? 30 : 40,
-
-categoryPercentage: esMovil ? 0.82 : 0.96,
-barPercentage: esMovil ? 0.86 : 1
-    };
+  dias.forEach(dia => {
+    traficoPorDia[dia] = Object.fromEntries(
+      campaniasActivas.map(campania => [
+        campania,
+        0
+      ])
+    );
   });
 
-  const maximoReal = Math.max(
-  0,
-  ...dias.flatMap(dia =>
-    itemsLeyenda.map(canal =>
-      traficoPorDia[dia][canal]
-    )
-  )
-);
+  /*
+   * Sumamos cada registro en su día
+   * y en su campaña correspondiente.
+   */
+  visitas.forEach(visita => {
+    if (!visita.fecha) return;
 
-const escala = calcularEscalaVisitas(maximoReal);
+    const dia = fechaISOEnPeru(visita.fecha);
+    const campania = obtenerLineaComercial(visita);
 
-renderEscalaVertical(
-  escala.maximo,
-  escala.paso
-);
+    if (
+      traficoPorDia[dia] &&
+      campaniasActivas.includes(campania)
+    ) {
+      traficoPorDia[dia][campania] += 1;
+    }
+  });
 
   /*
-   * Aproximadamente 15 días visibles por pantalla.
-   *
-   * 30 días = dos anchos de pantalla:
-   * primera vista 01–15;
-   * segundo desplazamiento 16–30.
+   * La tarjeta superior mantiene su propio resumen dinámico.
+   */
+  renderLeyendaGrafico();
+
+  const labels = dias.map(dia =>
+    dia.slice(-2)
+  );
+
+  /*
+   * Construimos una serie de barras por cada campaña.
+   */
+  const datasets = campaniasActivas.map(
+    (campania, indice) => {
+      const posicionColor =
+        ordenGeneralCampanias.indexOf(campania);
+
+      const indiceColor =
+        posicionColor >= 0
+          ? posicionColor % coloresCampanias.length
+          : indice % coloresCampanias.length;
+
+      const color = coloresCampanias[indiceColor];
+
+      return {
+        label: campania,
+
+        data: dias.map(dia =>
+          traficoPorDia[dia][campania]
+        ),
+
+        backgroundColor: color,
+        borderColor: color,
+
+        borderWidth: 0,
+        borderRadius: 3,
+
+        barThickness: esMovil ? 22 : 32,
+        maxBarThickness: esMovil ? 24 : 34,
+
+        categoryPercentage: esMovil
+          ? 0.84
+          : 0.9,
+
+        barPercentage: esMovil
+          ? 0.86
+          : 0.9
+      };
+    }
+  );
+
+  /*
+   * La escala considera el total diario de todas
+   * las campañas, no únicamente la barra más alta.
+   */
+  const maximoReal = Math.max(
+    0,
+    ...dias.map(dia =>
+      campaniasActivas.reduce(
+        (total, campania) =>
+          total +
+          Number(
+            traficoPorDia[dia][campania] || 0
+          ),
+        0
+      )
+    )
+  );
+
+  const escala =
+    calcularEscalaVisitas(maximoReal);
+
+  renderEscalaVertical(
+    escala.maximo,
+    escala.paso
+  );
+
+  /*
+   * Configuramos el desplazamiento horizontal.
    */
   const anchoMinimo = esMovil ? 360 : 700;
 
-const anchoVisible = Math.max(
-  scroll.clientWidth,
-  anchoMinimo
-);
+  const anchoVisible = Math.max(
+    scroll.clientWidth,
+    anchoMinimo
+  );
 
-  const gruposVisibles = esMovil ? 7 : 15;
+  const gruposVisibles =
+    esMovil ? 7 : 15;
 
   const multiplicador = Math.max(
     1,
-    Math.ceil(dias.length / gruposVisibles)
+    Math.ceil(
+      dias.length / gruposVisibles
+    )
   );
 
   canvasWrap.style.width =
@@ -1140,74 +1197,69 @@ const anchoVisible = Math.max(
   }
 
   OmegaHub.chartDias = new Chart(canvas, {
-  type: "bar",
+    type: "bar",
 
-  plugins: [
-    etiquetasTotalesPorDia
-  ],
+    plugins: [
+      etiquetasTotalesPorDia
+    ],
 
-  data: {
+    data: {
       labels,
       datasets
     },
 
     options: {
-  responsive: true,
-  maintainAspectRatio: false,
-  layout: {
-  padding: {
-    top: 26
-  }
-},
+      responsive: true,
+      maintainAspectRatio: false,
 
-  /*
-   * Evita redibujos continuos cuando las barras del navegador
-   * móvil aparecen o desaparecen durante el desplazamiento.
-   */
-  resizeDelay: esMovil ? 400 : 150,
-
-  /*
-   * En celulares evitamos renderizar el canvas a una densidad
-   * excesiva. En algunos equipos el DPR puede ser 3 o superior.
-   */
-  devicePixelRatio: esMovil
-    ? 1
-    : Math.min(window.devicePixelRatio || 1, 2),
-
-  /*
-   * En móvil eliminamos animaciones e interacción porque no
-   * utilizamos tooltips. Esto reduce bastante el trabajo gráfico.
-   */
-  animation: esMovil
-    ? false
-    : {
-        duration: 300
+      layout: {
+        padding: {
+          top: 26
+        }
       },
 
-  events: esMovil
-    ? []
-    : [
-        "mousemove",
-        "mouseout",
-        "click",
-        "touchstart",
-        "touchmove"
-      ],
+      resizeDelay: esMovil
+        ? 400
+        : 150,
 
-  interaction: {
-    mode: "nearest",
-    intersect: true
-  },
+      devicePixelRatio: esMovil
+        ? 1
+        : Math.min(
+            window.devicePixelRatio || 1,
+            2
+          ),
+
+      animation: esMovil
+        ? false
+        : {
+            duration: 300
+          },
+
+      events: esMovil
+        ? []
+        : [
+            "mousemove",
+            "mouseout",
+            "click",
+            "touchstart",
+            "touchmove"
+          ],
+
+      interaction: {
+        mode: "nearest",
+        intersect: true
+      },
 
       plugins: {
-  legend: {
-    display: false
-  },
+        legend: {
+          display: false
+        },
 
-  tooltip: {
-    enabled: false
-  }
-},
+        tooltip: {
+          enabled: false
+        }
+      },
+
       scales: {
         x: {
           stacked: false,
@@ -1225,39 +1277,37 @@ const anchoVisible = Math.max(
           },
 
           border: {
-            color: "rgba(148,163,184,.22)"
+            color:
+              "rgba(148,163,184,.22)"
           }
         },
 
         y: {
-  beginAtZero: true,
-  min: 0,
-  max: escala.maximo,
-  grace: 0,
+          beginAtZero: true,
+          min: 0,
+          max: escala.maximo,
+          grace: 0,
 
-  ticks: {
-    display: false,
-    stepSize: escala.paso
-  },
+          ticks: {
+            display: false,
+            stepSize: escala.paso
+          },
 
-  grid: {
-    color: "rgba(148,163,184,.12)"
-  },
+          grid: {
+            color:
+              "rgba(148,163,184,.12)"
+          },
 
-  border: {
-    display: false
-  }
-}
+          border: {
+            display: false
+          }
+        }
       }
     }
   });
 
-  /*
-   * Cada vez que cambia de cliente, regresamos al día inicial.
-   */
   scroll.scrollLeft = 0;
 }
-
 function renderCanales() {
   const contenedor = $("canalesResumen");
   if (!contenedor) return;
