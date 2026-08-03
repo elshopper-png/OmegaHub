@@ -751,44 +751,71 @@ function contarPor(lista, obtenerClave) {
     return acc;
   }, {});
 }
-function renderLeyendaGrafico(itemsLeyenda) {
+function renderLeyendaGrafico() {
   const contenedor = $("chartLegend");
   if (!contenedor) return;
 
-  if (itemsLeyenda.length <= 1) {
+  const visitas = visitasFiltradas();
 
-    contenedor.innerHTML = "";
+  const totalesPorCampania = contarPor(
+    visitas,
+    visita => obtenerLineaComercial(visita)
+  );
 
-    contenedor.style.display = "none";
+  const campaniasActivas = Object.entries(totalesPorCampania)
+    .filter(([, total]) => total > 0)
+    .sort((a, b) => b[1] - a[1]);
 
-    return;
+  const coloresCampanias = [
+    "#38bdf8",
+    "#f59e0b",
+    "#8b5cf6",
+    "#22c55e",
+    "#ec4899",
+    "#ef4444",
+    "#14b8a6",
+    "#eab308"
+  ];
 
-}
-
-  contenedor.innerHTML = itemsLeyenda.map(canal => {
-
-  const visual = CANALES[canal];
-
-  return `
-    <span class="chart-legend-item">
-
-      <span
-        class="chart-legend-color"
-        style="background-color:${visual.color}"
-      ></span>
-
-      <span class="chart-legend-icon">
-        ${escapeHTML(ICONOS_RRSS[canal] || "•")}
-      </span>
-
+  if (!campaniasActivas.length) {
+    contenedor.innerHTML = `
       <span class="chart-legend-name">
-        ${escapeHTML(visual.nombre)}
+        Sin campañas registradas
       </span>
+    `;
 
-    </span>
-  `;
+    contenedor.style.display = "flex";
+    return;
+  }
 
-}).join("");
+  contenedor.innerHTML = campaniasActivas
+    .map(([campania, total], indice) => {
+      const color =
+        coloresCampanias[indice % coloresCampanias.length];
+
+      return `
+        <span class="chart-legend-item">
+
+          <span
+            class="chart-legend-color"
+            style="background-color:${color}"
+          ></span>
+
+          <span class="chart-legend-name">
+            ${escapeHTML(campania)}
+          </span>
+
+          <strong>
+            ${numero(total)}
+            ${total === 1 ? "visita" : "visitas"}
+          </strong>
+
+        </span>
+      `;
+    })
+    .join("");
+
+  contenedor.style.display = "flex";
 }
 
 function calcularEscalaVisitas(maximoReal) {
