@@ -855,3 +855,41 @@ td a:hover {
     font-size: 18px;
   }
 }
+/* =========================================================
+   TARJETA COMPACTA DE CAMPAÑAS
+========================================================= */
+
+.chart-legend-card {
+  margin: 6px 0 14px;
+}
+
+.chart-legend-card .chart-legend {
+  min-height: 58px;
+  margin: 0;
+  padding: 12px 18px;
+
+  justify-content: center;
+  gap: 18px 34px;
+
+  border-radius: 12px;
+}
+
+.chart-legend-card .chart-legend-item {
+  gap: 10px;
+  font-size: 16px;
+}
+
+.chart-legend-card .chart-legend-color {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+
+.chart-legend-card .chart-legend-name {
+  font-size: 16px;
+}
+
+.chart-legend-card .chart-legend-item strong {
+  color: #ffffff;
+  font-size: 16px;
+}
