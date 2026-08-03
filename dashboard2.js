@@ -717,6 +717,18 @@ function renderHeaderCliente() {
 
 function renderKPIs() {
   const visitas = visitasDelPeriodoSeleccionado();
+  const detallePorPeriodo = {
+  hoy: "Registrado hoy en OmegaHub",
+  semana: "Registrado esta semana en OmegaHub",
+  mes: "Registrado este mes en OmegaHub",
+  anio: "Registrado este año en OmegaHub"
+};
+
+setText(
+  "detallePeriodoKpi",
+  detallePorPeriodo[OmegaHub.periodoActivo] ||
+    "Registrado hoy en OmegaHub"
+);
   const hoy = fechaISOEnPeru();
 
   const visitasHoy = visitas.filter(
@@ -1439,9 +1451,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (selectorPeriodo) {
     selectorPeriodo.onchange = () => {
-      OmegaHub.periodoActivo = selectorPeriodo.value;
-      renderGraficoHorario();
-    };
+  OmegaHub.periodoActivo = selectorPeriodo.value;
+
+  renderKPIs();
+  renderGraficoHorario();
+};
   }
 
   await cargarDatos();
