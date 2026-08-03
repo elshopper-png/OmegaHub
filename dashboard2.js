@@ -716,7 +716,7 @@ function renderHeaderCliente() {
 }
 
 function renderKPIs() {
-  const visitas = visitasFiltradas();
+  const visitas = visitasDelPeriodoSeleccionado();
   const hoy = fechaISOEnPeru();
 
   const visitasHoy = visitas.filter(
