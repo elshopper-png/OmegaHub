@@ -71,8 +71,8 @@ const CANALES = {
 };
 
 const LINEAS_COMERCIALES = {
-  lanzamiento_app: "App",
-  app: "App",
+  lanzamiento_app: "App Lanzamiento",
+  app: "App Lanzamiento",
 
   app_usuarios: "App Usuarios",
   app_emprendedores: "App Emprendedores",
