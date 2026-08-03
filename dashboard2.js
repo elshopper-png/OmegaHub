@@ -1002,10 +1002,6 @@ for (let numeroDia = 1; numeroDia <= ultimoDiaDelMes; numeroDia += 1) {
  * Detectamos automáticamente los canales que realmente
  * tienen visitas durante el mes mostrado.
  */
-/*
- * Detectamos automáticamente las campañas que realmente
- * tienen visitas durante el período mostrado.
- */
 const itemsLeyenda = [
   ...new Set(
     visitas
@@ -1013,7 +1009,7 @@ const itemsLeyenda = [
         const dia = fechaISOEnPeru(visita.fecha);
         return dias.includes(dia);
       })
-      .map(visita => obtenerLineaComercial(visita))
+      .map(visita => visita.canal)
       .filter(Boolean)
   )
 ];
@@ -1026,7 +1022,7 @@ const traficoPorDia = {};
 
 dias.forEach(dia => {
   traficoPorDia[dia] = Object.fromEntries(
-    itemsLeyenda.map(campania => [campania, 0])
+    itemsLeyenda.map(canal => [canal, 0])
   );
 });
 
@@ -1035,14 +1031,14 @@ dias.forEach(dia => {
  */
 visitas.forEach(visita => {
   const dia = fechaISOEnPeru(visita.fecha);
-  const campania = obtenerLineaComercial(visita);
+  const canal = visita.canal;
 
   if (
-  traficoPorDia[dia] &&
-  itemsLeyenda.includes(campania)
-) {
-  traficoPorDia[dia][campania] += 1;
-}
+    traficoPorDia[dia] &&
+    itemsLeyenda.includes(canal)
+  ) {
+    traficoPorDia[dia][canal] += 1;
+  }
 });
   /*
    * Solo aparecen las redes que realmente tienen registros
@@ -1061,10 +1057,17 @@ visitas.forEach(visita => {
    * Construimos un conjunto de barras por cada red activa.
    */
   const datasets = itemsLeyenda.map(canal => {
-    const visual = CANALES[canal];
+  const claveVisual = String(
+    canal || "directo"
+  ).trim().toLowerCase();
 
-    return {
-      label: visual.nombre,
+  const visual = CANALES[claveVisual] || {
+    nombre: String(canal || "Sin dato"),
+    color: "#38bdf8"
+  };
+
+  return {
+    label: visual.nombre,
 
       data: dias.map(dia =>
         traficoPorDia[dia][canal]
