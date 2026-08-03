@@ -73,6 +73,10 @@ const CANALES = {
 const LINEAS_COMERCIALES = {
   lanzamiento_app: "App",
   app: "App",
+
+  app_usuarios: "App Usuarios",
+  app_emprendedores: "App Emprendedores",
+
   renova: "Renova",
   videos_tiktok: "Videos para TikTok"
 };
