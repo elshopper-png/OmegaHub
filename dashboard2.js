@@ -1454,7 +1454,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   OmegaHub.periodoActivo = selectorPeriodo.value;
 
   renderKPIs();
+  renderGraficoDias();
+  renderCanales();
   renderGraficoHorario();
+  renderActividad();
+  renderTabla();
 };
   }
 
