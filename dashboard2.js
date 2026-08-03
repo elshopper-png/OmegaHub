@@ -1002,6 +1002,10 @@ for (let numeroDia = 1; numeroDia <= ultimoDiaDelMes; numeroDia += 1) {
  * Detectamos automáticamente los canales que realmente
  * tienen visitas durante el mes mostrado.
  */
+/*
+ * Detectamos automáticamente las campañas que realmente
+ * tienen visitas durante el período mostrado.
+ */
 const itemsLeyenda = [
   ...new Set(
     visitas
@@ -1009,7 +1013,7 @@ const itemsLeyenda = [
         const dia = fechaISOEnPeru(visita.fecha);
         return dias.includes(dia);
       })
-      .map(visita => visita.canal)
+      .map(visita => obtenerLineaComercial(visita))
       .filter(Boolean)
   )
 ];
@@ -1022,7 +1026,7 @@ const traficoPorDia = {};
 
 dias.forEach(dia => {
   traficoPorDia[dia] = Object.fromEntries(
-    itemsLeyenda.map(canal => [canal, 0])
+    itemsLeyenda.map(campania => [campania, 0])
   );
 });
 
@@ -1031,14 +1035,14 @@ dias.forEach(dia => {
  */
 visitas.forEach(visita => {
   const dia = fechaISOEnPeru(visita.fecha);
-  const canal = visita.canal;
+  const campania = obtenerLineaComercial(visita);
 
   if (
-    traficoPorDia[dia] &&
-    itemsLeyenda.includes(canal)
-  ) {
-    traficoPorDia[dia][canal] += 1;
-  }
+  traficoPorDia[dia] &&
+  itemsLeyenda.includes(campania)
+) {
+  traficoPorDia[dia][campania] += 1;
+}
 });
   /*
    * Solo aparecen las redes que realmente tienen registros
