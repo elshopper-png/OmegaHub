@@ -983,15 +983,36 @@ function renderGraficoDias() {
     return;
   }
 
-  const visitas = visitasFiltradas();
-  const dias = [];
+  const visitas = visitasDelPeriodoSeleccionado();
+const dias = [];
 
-  /*
-   * Construimos todos los días del mes actual
-   * usando la fecha de Perú.
-   */
-  const hoyPeru = fechaISOEnPeru();
+const hoyPeru = fechaISOEnPeru();
+const periodo = OmegaHub.periodoActivo;
 
+if (periodo === "hoy") {
+  dias.push(hoyPeru);
+}
+
+if (periodo === "semana") {
+  const fechaHoy = new Date(`${hoyPeru}T12:00:00-05:00`);
+
+  const diaSemana = fechaHoy.getDay();
+  const retroceso = diaSemana === 0 ? 6 : diaSemana - 1;
+
+  const inicioSemana = new Date(fechaHoy);
+  inicioSemana.setDate(
+    inicioSemana.getDate() - retroceso
+  );
+
+  const cursor = new Date(inicioSemana);
+
+  while (cursor <= fechaHoy) {
+    dias.push(fechaISOEnPeru(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+}
+
+if (periodo === "mes") {
   const [anioActual, mesActual] = hoyPeru
     .split("-")
     .map(Number);
@@ -1011,6 +1032,21 @@ function renderGraficoDias() {
       `${anioActual}-${String(mesActual).padStart(2, "0")}-${String(numeroDia).padStart(2, "0")}`
     );
   }
+}
+
+if (periodo === "anio") {
+  const fechasConActividad = [
+    ...new Set(
+      visitas
+        .filter(visita => visita.fecha)
+        .map(visita =>
+          fechaISOEnPeru(visita.fecha)
+        )
+    )
+  ].sort();
+
+  dias.push(...fechasConActividad);
+}
 
   /*
    * Paleta fija para un máximo de cuatro campañas.
@@ -1109,9 +1145,13 @@ function renderGraficoDias() {
    */
   renderLeyendaGrafico();
 
-  const labels = dias.map(dia =>
-    dia.slice(-2)
-  );
+  const labels = dias.map(dia => {
+  if (OmegaHub.periodoActivo === "anio") {
+    return `${dia.slice(8, 10)}/${dia.slice(5, 7)}`;
+  }
+
+  return dia.slice(-2);
+});
 
   /*
    * Construimos una serie de barras por cada campaña.
