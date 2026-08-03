@@ -771,24 +771,11 @@ function renderLeyendaGrafico() {
   const contenedor = $("chartLegend");
   if (!contenedor) return;
 
-  /*
-   * La leyenda utiliza exactamente el período
-   * seleccionado en el dashboard.
-   */
   const visitasPeriodo =
     visitasDelPeriodoSeleccionado();
 
-  const totalesPorCampania = contarPor(
-    visitasPeriodo,
-    visita => obtenerLineaComercial(visita)
-  );
-
-  const campaniasActivas = Object.entries(
-    totalesPorCampania
-  )
-    .filter(([, total]) => total > 0)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
+  const visitasGenerales =
+    visitasFiltradas();
 
   const coloresCampanias = [
     "#38bdf8",
@@ -796,6 +783,41 @@ function renderLeyendaGrafico() {
     "#8b5cf6",
     "#22c55e"
   ];
+
+  /*
+   * Orden histórico permanente:
+   * cada campaña conserva siempre su color,
+   * aunque cambie el período seleccionado.
+   */
+  const totalesGenerales = contarPor(
+    visitasGenerales,
+    visita => obtenerLineaComercial(visita)
+  );
+
+  const ordenGeneralCampanias =
+    Object.entries(totalesGenerales)
+      .filter(([, total]) => total > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([campania]) => campania)
+      .slice(0, 4);
+
+  /*
+   * Totales correspondientes al período visible.
+   */
+  const totalesPeriodo = contarPor(
+    visitasPeriodo,
+    visita => obtenerLineaComercial(visita)
+  );
+
+  const campaniasActivas =
+    ordenGeneralCampanias
+      .filter(campania =>
+        Number(totalesPeriodo[campania] || 0) > 0
+      )
+      .map(campania => [
+        campania,
+        Number(totalesPeriodo[campania] || 0)
+      ]);
 
   if (!campaniasActivas.length) {
     contenedor.innerHTML = `
@@ -809,10 +831,13 @@ function renderLeyendaGrafico() {
   }
 
   contenedor.innerHTML = campaniasActivas
-    .map(([campania, total], indice) => {
+    .map(([campania, total]) => {
+      const posicionColor =
+        ordenGeneralCampanias.indexOf(campania);
+
       const color =
         coloresCampanias[
-          indice % coloresCampanias.length
+          posicionColor % coloresCampanias.length
         ];
 
       return `
