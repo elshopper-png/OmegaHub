@@ -564,7 +564,9 @@ async function cargarDatos() {
     pagina++;
   }
 
+  console.log("Registros descargados:", todasLasVisitas.length);
   OmegaHub.visitas = todasLasVisitas.map(normalizarVisita);
+  console.log("Registros normalizados:", OmegaHub.visitas.length);
 
   console.log(
     `Picapiedra cargó ${OmegaHub.visitas.length} visitas`
@@ -749,11 +751,11 @@ function contarPor(lista, obtenerClave) {
     return acc;
   }, {});
 }
-function renderLeyendaGrafico(canalesActivos) {
+function renderLeyendaGrafico(itemsLeyenda) {
   const contenedor = $("chartLegend");
   if (!contenedor) return;
 
-  if (canalesActivos.length <= 1) {
+  if (itemsLeyenda.length <= 1) {
 
     contenedor.innerHTML = "";
 
@@ -763,7 +765,7 @@ function renderLeyendaGrafico(canalesActivos) {
 
 }
 
-  contenedor.innerHTML = canalesActivos.map(canal => {
+  contenedor.innerHTML = itemsLeyenda.map(canal => {
 
   const visual = CANALES[canal];
 
@@ -973,7 +975,7 @@ for (let numeroDia = 1; numeroDia <= ultimoDiaDelMes; numeroDia += 1) {
  * Detectamos automáticamente los canales que realmente
  * tienen visitas durante el mes mostrado.
  */
-const canalesActivos = [
+const itemsLeyenda = [
   ...new Set(
     visitas
       .filter(visita => {
@@ -993,7 +995,7 @@ const traficoPorDia = {};
 
 dias.forEach(dia => {
   traficoPorDia[dia] = Object.fromEntries(
-    canalesActivos.map(canal => [canal, 0])
+    itemsLeyenda.map(canal => [canal, 0])
   );
 });
 
@@ -1006,7 +1008,7 @@ visitas.forEach(visita => {
 
   if (
     traficoPorDia[dia] &&
-    canalesActivos.includes(canal)
+    itemsLeyenda.includes(canal)
   ) {
     traficoPorDia[dia][canal] += 1;
   }
@@ -1017,7 +1019,7 @@ visitas.forEach(visita => {
    */
  
 
-  renderLeyendaGrafico(canalesActivos);
+  renderLeyendaGrafico(itemsLeyenda);
 
   /*
    * El eje inferior muestra únicamente el número del día.
@@ -1027,7 +1029,7 @@ visitas.forEach(visita => {
   /*
    * Construimos un conjunto de barras por cada red activa.
    */
-  const datasets = canalesActivos.map(canal => {
+  const datasets = itemsLeyenda.map(canal => {
     const visual = CANALES[canal];
 
     return {
@@ -1058,7 +1060,7 @@ barPercentage: esMovil ? 0.86 : 1
   const maximoReal = Math.max(
   0,
   ...dias.flatMap(dia =>
-    canalesActivos.map(canal =>
+    itemsLeyenda.map(canal =>
       traficoPorDia[dia][canal]
     )
   )
