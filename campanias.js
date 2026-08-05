@@ -46,7 +46,7 @@ const CAMPANIAS = {
     cliente: "shopper",
     campania: "app_screenshots",
     origen: "meta",
-    destino: "https://elshopper-pwa.vercel.app/"
+    destino: "https://wa.me/51993490886?text=Hola%2C%20vi%20la%20promoci%C3%B3n%20de%20El%20Shopper%20Digital%20y%20quiero%20obtener%20un%20mes%20gratis%20de%20publicidad%20para%20mi%20negocio.%20Por%20favor%2C%20env%C3%ADenme%20los%20requisitos%20y%20la%20forma%20de%20participar."
   }
 
 };
