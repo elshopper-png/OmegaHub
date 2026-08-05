@@ -75,7 +75,7 @@ const LINEAS_COMERCIALES = {
   app: "App Lanzamiento",
 
   app_usuarios: "App Usuarios",
-  app_emprendedores: "App Emprendedores",
+app_screenshots: "Mes Gratis",
 
   renova: "Renova",
   videos_tiktok: "Videos para TikTok"
