@@ -1349,7 +1349,7 @@ function renderGraficoDias() {
     type: "bar",
 
     plugins: [
-  // etiquetasTotalesPorDia
+  etiquetasTotalesPorDia
 ],
 
     data: {
