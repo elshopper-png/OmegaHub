@@ -464,9 +464,11 @@ function renderGraficoHorario() {
             horarios[segmento.clave]
           ),
 
-          backgroundColor: segmentos.map(
-            segmento => segmento.color
-          ),
+          backgroundColor: segmentos.map(segmento =>
+  segmento.clave === principal.clave
+    ? segmento.color
+    : "#d7dde5"
+),
 
           borderColor: "#0d1a2b",
           borderWidth: 4,
@@ -933,6 +935,10 @@ function renderEscalaVertical(maximo, paso) {
  * Muestra sobre cada grupo de barras el total exacto
  * de visitas registradas durante ese día.
  */
+/*
+ * Muestra encima de cada barra
+ * el valor individual de esa campaña.
+ */
 const etiquetasTotalesPorDia = {
   id: "etiquetasTotalesPorDia",
 
@@ -950,49 +956,33 @@ const etiquetasTotalesPorDia = {
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
 
-    data.labels.forEach((_, indiceDia) => {
-      let totalDia = 0;
-      let sumaPosicionesX = 0;
-      let cantidadBarrasVisibles = 0;
-      let posicionSuperior = Number.POSITIVE_INFINITY;
+    data.datasets.forEach((dataset, indiceDataset) => {
+      if (!chart.isDatasetVisible(indiceDataset)) {
+        return;
+      }
 
-      data.datasets.forEach((dataset, indiceDataset) => {
+      const meta = chart.getDatasetMeta(indiceDataset);
+
+      meta.data.forEach((barra, indiceDia) => {
         const valor = Number(dataset.data[indiceDia] || 0);
-        totalDia += valor;
-
-        const meta = chart.getDatasetMeta(indiceDataset);
-        const barra = meta.data[indiceDia];
 
         if (!barra || valor <= 0) {
           return;
         }
 
-        sumaPosicionesX += barra.x;
-        cantidadBarrasVisibles += 1;
-        posicionSuperior = Math.min(posicionSuperior, barra.y);
+        ctx.fillText(
+          String(valor),
+          barra.x,
+          barra.y - 7
+        );
       });
-
-      if (
-        totalDia <= 0 ||
-        cantidadBarrasVisibles === 0 ||
-        !Number.isFinite(posicionSuperior)
-      ) {
-        return;
-      }
-
-      const posicionCentralX =
-        sumaPosicionesX / cantidadBarrasVisibles;
-
-      ctx.fillText(
-        numero(totalDia),
-        posicionCentralX,
-        posicionSuperior - 8
-      );
     });
 
     ctx.restore();
   }
 };
+
+    
 
 function renderGraficoDias() {
   console.log("Entró a renderGraficoDias");
@@ -1359,8 +1349,8 @@ function renderGraficoDias() {
     type: "bar",
 
     plugins: [
-      etiquetasTotalesPorDia
-    ],
+  // etiquetasTotalesPorDia
+],
 
     data: {
       labels,
