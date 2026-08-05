@@ -28,7 +28,7 @@ const CAMPANIAS = {
     destino: "https://www.instagram.com/kuyaperujoyeria/"
   },
 
-    "meta-shopper-app": {
+  "meta-shopper-app": {
     cliente: "shopper",
     campania: "lanzamiento_app",
     origen: "meta",
@@ -38,6 +38,13 @@ const CAMPANIAS = {
   "meta-shopper-usuarios": {
     cliente: "shopper",
     campania: "app_usuarios",
+    origen: "meta",
+    destino: "https://elshopper-pwa.vercel.app/"
+  },
+
+  "meta-shopper-screenshots": {
+    cliente: "shopper",
+    campania: "app_screenshots",
     origen: "meta",
     destino: "https://elshopper-pwa.vercel.app/"
   }
