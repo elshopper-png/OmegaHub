@@ -464,11 +464,7 @@ function renderGraficoHorario() {
             horarios[segmento.clave]
           ),
 
-          backgroundColor: segmentos.map(segmento =>
-  segmento.clave === principal.clave
-    ? segmento.color
-    : "#d7dde5"
-),
+          backgroundColor: segmentos.map(segmento => segmento.color),
 
           borderColor: "#0d1a2b",
           borderWidth: 4,
