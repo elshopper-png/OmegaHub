@@ -609,6 +609,7 @@ function renderTodo() {
   renderSelectorClientes();
   renderHeaderCliente();
   renderKPIs();
+  renderDispositivos();
   renderGraficoDias();
   renderCanales();
   renderGraficoHorario();
@@ -696,6 +697,7 @@ function renderSelectorClientes() {
 
     renderHeaderCliente();
     renderKPIs();
+    renderDispositivos();
     renderGraficoDias();
     renderCanales();
     renderActividad();
@@ -779,6 +781,38 @@ const lider = Object.entries(porLinea)
   lider ? `${numero(lider[1])} visitas en OmegaHub` : "Aún sin tráfico registrado"
 );
   setText("clientesActivos", numero(clientesActivos));
+}
+
+function renderDispositivos() {
+  const visitas = visitasDelPeriodoSeleccionado();
+
+  const conteo = contarPor(
+    visitas,
+    visita => visita.dispositivo || "No identificado"
+  );
+
+  const android = Number(conteo.Android || 0);
+  const iphone = Number(conteo.iPhone || 0);
+
+  const totalMovil = android + iphone;
+
+  const porcentajeAndroid = totalMovil
+    ? Math.round((android / totalMovil) * 100)
+    : 0;
+
+  const porcentajeIphone = totalMovil
+    ? Math.round((iphone / totalMovil) * 100)
+    : 0;
+
+  setText(
+    "dispositivosAndroid",
+    `${numero(android)} (${porcentajeAndroid}%)`
+  );
+
+  setText(
+    "dispositivosIphone",
+    `${numero(iphone)} (${porcentajeIphone}%)`
+  );
 }
 
 function contarPor(lista, obtenerClave) {
@@ -1761,6 +1795,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   OmegaHub.periodoActivo = selectorPeriodo.value;
 
   renderKPIs();
+  renderDispositivos();
   renderGraficoDias();
   renderCanales();
   renderGraficoHorario();
