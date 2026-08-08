@@ -137,6 +137,26 @@ function fechaISOEnPeru(valor = new Date()) {
   }).format(new Date(valor));
 }
 
+function detectarPlataforma(userAgent = "", dispositivo = "") {
+  const ua = String(userAgent).toLowerCase();
+  const device = String(dispositivo).toLowerCase();
+
+  if (ua.includes("android")) return "Android";
+
+  if (
+    ua.includes("iphone") ||
+    ua.includes("ipad") ||
+    ua.includes("ipod")
+  ) {
+    return "iPhone";
+  }
+
+  if (device === "desktop") return "Escritorio";
+  if (device === "movil") return "Móvil";
+
+  return "No identificado";
+}
+
 function normalizarVisita(visita) {
   return {
     ...visita,
@@ -157,7 +177,10 @@ function normalizarVisita(visita) {
       "directo"
     ),
     campania: visita.campania || visita.campaña || "Sin campaña",
-    dispositivo: visita.dispositivo || visita.device || "No identificado",
+    dispositivo: detectarPlataforma(
+  visita.user_agent || visita.userAgent || "",
+  visita.dispositivo || visita.device || ""
+),
     destino: visita.destino || visita.pagina || ""
   };
 }
