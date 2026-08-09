@@ -785,6 +785,11 @@ const lider = Object.entries(porLinea)
 
 function renderDispositivos() {
   const visitas = visitasDelPeriodoSeleccionado();
+  console.log("TOTAL VISITAS:", visitas.length);
+
+console.log("DISPOSITIVOS:", visitas.map(v => v.dispositivo));
+
+console.log("USER AGENTS:", visitas.map(v => v.user_agent));
 
   const conteo = contarPor(
     visitas,
