@@ -785,39 +785,63 @@ const lider = Object.entries(porLinea)
 
 function renderDispositivos() {
   const visitas = visitasDelPeriodoSeleccionado();
-  console.log("TOTAL VISITAS:", visitas.length);
-
-console.log("DISPOSITIVOS:", visitas.map(v => v.dispositivo));
-
-console.log("USER AGENTS:", visitas.map(v => v.user_agent));
 
   const conteo = contarPor(
     visitas,
     visita => visita.dispositivo || "No identificado"
   );
 
-  const android = Number(conteo.Android || 0);
-  const iphone = Number(conteo.iPhone || 0);
+  const total = visitas.length;
+  const contenedor = $("dispositivosResumen");
 
-  const totalMovil = android + iphone;
+  if (!contenedor) return;
 
-  const porcentajeAndroid = totalMovil
-    ? Math.round((android / totalMovil) * 100)
-    : 0;
+  const dispositivos = [
+    { clave: "Android", icono: "🤖" },
+    { clave: "iPhone", icono: "🍎" },
+    { clave: "Escritorio", icono: "💻" },
+    { clave: "Móvil", icono: "📱" },
+    { clave: "No identificado", icono: "❓" }
+  ];
 
-  const porcentajeIphone = totalMovil
-    ? Math.round((iphone / totalMovil) * 100)
-    : 0;
+  const activos = dispositivos
+    .map(item => {
+      const cantidad = Number(conteo[item.clave] || 0);
 
-  setText(
-    "dispositivosAndroid",
-    `${numero(android)} (${porcentajeAndroid}%)`
-  );
+      const porcentaje = total
+        ? Math.round((cantidad / total) * 100)
+        : 0;
 
-  setText(
-    "dispositivosIphone",
-    `${numero(iphone)} (${porcentajeIphone}%)`
-  );
+      return {
+        ...item,
+        cantidad,
+        porcentaje
+      };
+    })
+    .filter(item => item.cantidad > 0);
+
+  if (!activos.length) {
+    contenedor.innerHTML = `
+      <div class="empty-state">
+        No hay dispositivos registrados en este período.
+      </div>
+    `;
+    return;
+  }
+
+  contenedor.innerHTML = activos
+    .map(item => `
+      <article class="channel-card">
+        <div class="channel-name">
+          ${item.icono} ${item.clave}
+        </div>
+
+        <strong>
+          ${numero(item.cantidad)} (${item.porcentaje}%)
+        </strong>
+      </article>
+    `)
+    .join("");
 }
 
 function contarPor(lista, obtenerClave) {
