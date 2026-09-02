@@ -3,46 +3,50 @@
 // ===============================
 
 async function iniciarOmegaHub() {
+
     const campania = obtenerCampania();
 
     console.log("Campaña detectada:", campania);
 
     if (!campania || !campania.destino) {
-        console.error("No se encontró destino para esta campaña");
+        console.error("No se encontró una campaña válida.");
         return;
     }
 
-    const destinoFinal = campania.destino;
-
     try {
+
         const limiteDeEspera = new Promise((resolve) => {
             setTimeout(() => {
                 console.warn(
-                    "Supabase demoró demasiado. Se continuará al destino."
+                    "Supabase demoró demasiado. Continuando al destino."
                 );
 
                 resolve(false);
-            }, 2500);
+            }, 1200);
         });
 
         const registroCompletado = await Promise.race([
-            registrarVisita(destinoFinal),
+            registrarCampania(campania),
             limiteDeEspera
         ]);
 
         if (registroCompletado) {
-            console.log("✅ Registro confirmado. Redireccionando...");
+            console.log("✅ Registro confirmado.");
         } else {
             console.warn(
-                "⚠️ No se confirmó el registro. Se redireccionará para no detener al visitante."
+                "⚠️ Registro no confirmado. Continuando al destino."
             );
         }
 
     } catch (error) {
-        console.error("Error durante el proceso de registro:", error);
+        console.error(
+            "Error durante el registro de campaña:",
+            error
+        );
     }
 
-    window.location.replace(destinoFinal);
+    // El usuario nunca queda atrapado en OmegaHub.
+    window.location.replace(campania.destino);
 }
 
 iniciarOmegaHub();
