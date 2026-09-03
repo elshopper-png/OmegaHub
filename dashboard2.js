@@ -22,8 +22,9 @@ const VISTA_MAESTRA =
   PARAMETROS_DASHBOARD.get("vista") === "maestra";
 
 const CLIENTES_CONFIG = {
-  shopper: {
-    nombre: "Shopper Digital"
+  kuya: {
+    nombre: "KUYA",
+    logo: "./motor/clientes/kuya.png"
   }
 };
 
@@ -71,14 +72,7 @@ const CANALES = {
 };
 
 const LINEAS_COMERCIALES = {
-  lanzamiento_app: "App Lanzamiento",
-  app: "App Lanzamiento",
-
-  app_usuarios: "App Usuarios",
-app_screenshots: "Mes Gratis",
-
-  renova: "Renova",
-  videos_tiktok: "Videos para TikTok"
+  kuya_tiktok_whatsapp_sep26: "KUYA · TikTok WhatsApp · Sep 2026"
 };
 
 const REDES_SOCIALES = [
@@ -465,8 +459,8 @@ function renderGraficoHorario() {
   setText(
     "horarioPrincipalDetalle",
     total
-      ? `${porcentajePrincipal}% del tráfico`
-      : "Esperando tráfico"
+     ? `${porcentajePrincipal}% de las llegadas`
+: "Esperando llegadas"
   );
 
   if (OmegaHub.chartHorario) {
@@ -566,6 +560,7 @@ async function cargarDatos() {
         "cliente",
         OmegaHub.clienteActivo
       );
+      
     }
 
     const { data, error } = await consulta;
@@ -710,6 +705,19 @@ function renderHeaderCliente() {
     const configuracion =
       CLIENTES_CONFIG[OmegaHub.clienteActivo];
 
+        const logo = $("logoCliente");
+  const marca = $("marcaCliente");
+
+  if (logo && configuracion?.logo) {
+    logo.src = configuracion.logo;
+    logo.alt = configuracion.nombre;
+  }
+
+  if (marca) {
+    marca.textContent =
+      configuracion?.nombre || "Cliente";
+  }
+
     setText(
       "nombreClienteHeader",
       configuracion?.nombre || "Cliente"
@@ -778,7 +786,7 @@ const lider = Object.entries(porLinea)
 
   setText(
   "detalleCanalLider",
-  lider ? `${numero(lider[1])} visitas en OmegaHub` : "Aún sin tráfico registrado"
+  lider ? `${numero(lider[1])} llegadas registradas` : "Aún sin llegadas registradas"
 );
   setText("clientesActivos", numero(clientesActivos));
 }
@@ -938,7 +946,7 @@ function renderLeyendaGrafico() {
 
           <strong>
             ${numero(total)}
-            ${total === 1 ? "visita" : "visitas"}
+            ${total === 1 ? "llegada" : "llegadas"}
           </strong>
 
         </span>
@@ -1602,24 +1610,24 @@ function renderCanales() {
 
   const textosPeriodo = {
     hoy: {
-      singular: "visita registrada hoy",
-      plural: "visitas registradas hoy"
-    },
+  singular: "llegada registrada hoy",
+  plural: "llegadas registradas hoy"
+},
 
-    semana: {
-      singular: "visita registrada esta semana",
-      plural: "visitas registradas esta semana"
-    },
+semana: {
+  singular: "llegada registrada esta semana",
+  plural: "llegadas registradas esta semana"
+},
 
-    mes: {
-      singular: "visita registrada este mes",
-      plural: "visitas registradas este mes"
-    },
+mes: {
+  singular: "llegada registrada este mes",
+  plural: "llegadas registradas este mes"
+},
 
-    anio: {
-      singular: "visita registrada este año",
-      plural: "visitas registradas este año"
-    }
+anio: {
+  singular: "llegada registrada este año",
+  plural: "llegadas registradas este año"
+}
   };
 
   const textoPeriodo =
@@ -1729,10 +1737,10 @@ function renderActividad() {
   setText(
     "visitasEnVivo",
     `${numero(activas)} ${
-      activas === 1
-        ? "persona"
-        : "personas"
-    }`
+  activas === 1
+    ? "llegada"
+    : "llegadas"
+}`
   );
 }
 
@@ -1754,7 +1762,7 @@ function renderTabla() {
           colspan="6"
           class="empty-state"
         >
-          No hay visitas registradas en este período.
+          No hay llegadas registradas en este período.
         </td>
       </tr>
     `;
