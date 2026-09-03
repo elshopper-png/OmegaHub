@@ -22,7 +22,7 @@ async function iniciarOmegaHub() {
                 );
 
                 resolve(false);
-            }, 1200);
+            }, 350);
         });
 
         const registroCompletado = await Promise.race([
