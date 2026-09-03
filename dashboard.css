@@ -171,3 +171,14 @@ canvas{
     }
 
 }
+
+#canalLider {
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+@media (max-width: 768px) {
+  #canalLider {
+    font-size: 1.6rem;
+  }
+}

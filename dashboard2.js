@@ -72,7 +72,7 @@ const CANALES = {
 };
 
 const LINEAS_COMERCIALES = {
-  kuya_tiktok_whatsapp_sep26: "KUYA · TikTok WhatsApp · Sep 2026"
+  kuya_tiktok_whatsapp_sep26: "TikTok → WhatsApp"
 };
 
 const REDES_SOCIALES = [
@@ -521,8 +521,8 @@ function renderGraficoHorario() {
       const valor = Number(contexto.raw || 0);
 
       return `${numero(valor)} ${
-        valor === 1 ? "visita" : "visitas"
-      }`;
+  valor === 1 ? "llegada" : "llegadas"
+}`;
     }
   }
 }
