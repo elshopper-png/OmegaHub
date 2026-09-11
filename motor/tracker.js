@@ -23,7 +23,22 @@ function detectarNavegador() {
     return "otro";
 }
 
+function esTraficoAutomatico() {
+    const ua = navigator.userAgent.toLowerCase();
+
+    return (
+        ua.includes("facebookexternalhit") ||
+        ua.includes("facebot")
+    );
+}
+
 async function registrarCampania(campania) {
+
+    if (esTraficoAutomatico()) {
+        console.log("🤖 Tráfico automático de Meta ignorado.");
+        return true;
+    }
+
     const visita = {
         pagina: window.location.href,
         origen: campania.origen,
