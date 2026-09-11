@@ -72,7 +72,11 @@ const CANALES = {
 };
 
 const LINEAS_COMERCIALES = {
-  kuya_tiktok_whatsapp_sep26: "TikTok → WhatsApp"
+  kuya_tiktok_whatsapp_sep26: "TikTok → WhatsApp",
+
+  shopper_meta_campania_1: "Campaña 1",
+  shopper_meta_campania_2: "Campaña 2",
+  shopper_meta_campania_3: "Campaña 3"
 };
 
 const REDES_SOCIALES = [
