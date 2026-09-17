@@ -849,17 +849,19 @@ function renderCategorias() {
     conteo[nombre] = (conteo[nombre] || 0) + 1;
   });
 
-  const lider = Object.entries(conteo)
-    .sort((a, b) => b[1] - a[1])[0];
-
-  const [nombreCategoria, cantidad] = lider;
-
-  setText(
-    "detalleCategorias",
+  const detalle = Object.entries(conteo)
+  .sort((a, b) => b[1] - a[1])
+  .map(([nombreCategoria, cantidad]) =>
     `${nombreCategoria}: ${cantidad} ${
       cantidad === 1 ? "apertura" : "aperturas"
     }`
-  );
+  )
+  .join(" · ");
+
+setText(
+  "detalleCategorias",
+  detalle
+);
 }
 
 function renderKPIs() {
