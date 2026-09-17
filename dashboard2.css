@@ -893,3 +893,36 @@ td a:hover {
   color: #ffffff;
   font-size: 16px;
 }
+/* =====================================================
+   NAVEGACIÓN EN CATEGORÍAS — DETALLE VERTICAL
+   ===================================================== */
+
+.categorias-detalle {
+  margin-top: 10px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.categoria-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+}
+
+.categoria-fila:last-child {
+  border-bottom: none;
+}
+
+.categoria-fila span {
+  min-width: 0;
+}
+
+.categoria-fila strong {
+  flex-shrink: 0;
+  font-size: 15px;
+}

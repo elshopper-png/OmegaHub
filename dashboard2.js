@@ -851,17 +851,22 @@ function renderCategorias() {
 
   const detalle = Object.entries(conteo)
   .sort((a, b) => b[1] - a[1])
-  .map(([nombreCategoria, cantidad]) =>
-    `${nombreCategoria}: ${cantidad} ${
-      cantidad === 1 ? "apertura" : "aperturas"
-    }`
+  .map(
+    ([nombreCategoria, cantidad]) => `
+      <div class="categoria-fila">
+        <span>${nombreCategoria}</span>
+        <strong>${cantidad}</strong>
+      </div>
+    `
   )
-  .join(" · ");
+  .join("");
 
-setText(
-  "detalleCategorias",
-  detalle
-);
+const detalleElemento =
+  document.getElementById("detalleCategorias");
+
+if (detalleElemento) {
+  detalleElemento.innerHTML = detalle;
+}
 }
 
 function renderKPIs() {
