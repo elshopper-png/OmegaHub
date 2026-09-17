@@ -304,6 +304,57 @@ function visitasDelPeriodoSeleccionado() {
   return visitas;
 }
 
+function categoriasDelPeriodoSeleccionado() {
+  const categorias = OmegaHub.categorias || [];
+  const hoy = fechaISOEnPeru();
+  const periodo = OmegaHub.periodoActivo;
+
+  if (periodo === "hoy") {
+    return categorias.filter(
+      item => fechaISOEnPeru(item.created_at) === hoy
+    );
+  }
+
+  if (periodo === "mes") {
+    const mesActual = hoy.slice(0, 7);
+
+    return categorias.filter(
+      item =>
+        fechaISOEnPeru(item.created_at).slice(0, 7) === mesActual
+    );
+  }
+
+  if (periodo === "anio") {
+    const anioActual = hoy.slice(0, 4);
+
+    return categorias.filter(
+      item =>
+        fechaISOEnPeru(item.created_at).slice(0, 4) === anioActual
+    );
+  }
+
+  if (periodo === "semana") {
+    const fechaHoy = new Date(`${hoy}T12:00:00-05:00`);
+    const diaSemana = fechaHoy.getDay();
+    const retroceso = diaSemana === 0 ? 6 : diaSemana - 1;
+
+    fechaHoy.setDate(fechaHoy.getDate() - retroceso);
+
+    const inicioSemana = fechaISOEnPeru(fechaHoy);
+
+    return categorias.filter(item => {
+      const fechaCategoria = fechaISOEnPeru(item.created_at);
+
+      return (
+        fechaCategoria >= inicioSemana &&
+        fechaCategoria <= hoy
+      );
+    });
+  }
+
+  return categorias;
+}
+
 function nombrePeriodoSeleccionado() {
   const nombres = {
     hoy: "Hoy",
@@ -596,6 +647,33 @@ async function cargarDatos() {
     `Picapiedra cargó ${OmegaHub.visitas.length} visitas`
   );
 
+  // ============================================================
+// NAVEGACIÓN EN CATEGORÍAS SHOPPER
+// ============================================================
+
+const {
+  data: categoriasData,
+  error: categoriasError
+} = await supabaseClient
+  .from("shop_categorias")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+if (categoriasError) {
+  console.error(
+    "Error cargando navegación de categorías:",
+    categoriasError
+  );
+
+  OmegaHub.categorias = [];
+} else {
+  OmegaHub.categorias = categoriasData || [];
+
+  console.log(
+    `Picapiedra cargó ${OmegaHub.categorias.length} aperturas de categorías`
+  );
+}
+
   setEstado("OmegaHub conectado", "ok");
   renderTodo();
 }
@@ -608,6 +686,7 @@ function renderTodo() {
   renderSelectorClientes();
   renderHeaderCliente();
   renderKPIs();
+  renderCategorias();
   renderDispositivos();
   renderGraficoDias();
   renderCanales();
@@ -748,6 +827,39 @@ function renderHeaderCliente() {
     .replace(/\b\w/g, letra => letra.toUpperCase());
 
   setText("nombreClienteHeader", nombre);
+}
+
+function renderCategorias() {
+  const categorias = categoriasDelPeriodoSeleccionado();
+
+  setText("totalCategorias", categorias.length);
+
+  if (categorias.length === 0) {
+    setText(
+      "detalleCategorias",
+      "Sin aperturas registradas"
+    );
+    return;
+  }
+
+  const conteo = {};
+
+  categorias.forEach(item => {
+    const nombre = item.categoria || "Sin categoría";
+    conteo[nombre] = (conteo[nombre] || 0) + 1;
+  });
+
+  const lider = Object.entries(conteo)
+    .sort((a, b) => b[1] - a[1])[0];
+
+  const [nombreCategoria, cantidad] = lider;
+
+  setText(
+    "detalleCategorias",
+    `${nombreCategoria}: ${cantidad} ${
+      cantidad === 1 ? "apertura" : "aperturas"
+    }`
+  );
 }
 
 function renderKPIs() {
