@@ -28,7 +28,8 @@ function esTraficoAutomatico() {
 
     return (
         ua.includes("facebookexternalhit") ||
-        ua.includes("facebot")
+        ua.includes("facebot") ||
+        ua.includes("meta-externalads")
     );
 }
 
