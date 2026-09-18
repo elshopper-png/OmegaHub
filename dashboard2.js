@@ -910,6 +910,7 @@ function renderHeaderCliente() {
 
 function renderInstalaciones() {
   const instalaciones = instalacionesDelPeriodoSeleccionado();
+  const totalAcumulado = (OmegaHub.instalaciones || []).length;
 
   setText("totalInstalaciones", numero(instalaciones.length));
 
@@ -920,12 +921,15 @@ function renderInstalaciones() {
     anio: "Instaladas este año"
   };
 
-  setText(
-    "detalleInstalaciones",
+  const detallePeriodo =
     instalaciones.length > 0
       ? detallePorPeriodo[OmegaHub.periodoActivo] ||
-          "Instalaciones registradas"
-      : "Sin instalaciones registradas"
+        "Instalaciones registradas"
+      : "Sin instalaciones registradas";
+
+  setText(
+    "detalleInstalaciones",
+    `${detallePeriodo} · Total acumulado: ${numero(totalAcumulado)}`
   );
 }
 
