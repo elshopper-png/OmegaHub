@@ -32,10 +32,74 @@ function esTraficoAutomatico() {
     );
 }
 
+
+// ===============================
+// IDENTIFICADOR ANÓNIMO DEL NAVEGADOR
+// ===============================
+
+function obtenerVisitorId() {
+
+    const CLAVE_VISITOR =
+        "omegahub_visitor_id";
+
+    try {
+
+        let visitorId =
+            localStorage.getItem(
+                CLAVE_VISITOR
+            );
+
+        if (!visitorId) {
+
+            if (
+                window.crypto &&
+                typeof window.crypto.randomUUID === "function"
+            ) {
+
+                visitorId =
+                    window.crypto.randomUUID();
+
+            } else {
+
+                visitorId =
+                    "visitor-" +
+                    Date.now() +
+                    "-" +
+                    Math.random()
+                        .toString(36)
+                        .substring(2, 15);
+            }
+
+            localStorage.setItem(
+                CLAVE_VISITOR,
+                visitorId
+            );
+        }
+
+        return visitorId;
+
+    } catch (error) {
+
+        console.warn(
+            "No se pudo usar localStorage para visitor_id:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+// ===============================
+// REGISTRO DE CAMPAÑA
+// ===============================
+
 async function registrarCampania(campania) {
 
     if (esTraficoAutomatico()) {
-        console.log("🤖 Tráfico automático de Meta ignorado.");
+        console.log(
+            "🤖 Tráfico automático de Meta ignorado."
+        );
         return true;
     }
 
@@ -51,20 +115,30 @@ async function registrarCampania(campania) {
         campania: campania.campania,
         destino: campania.destino,
         dispositivo: detectarDispositivo(),
-        navegador: detectarNavegador()
+        navegador: detectarNavegador(),
+        visitor_id: obtenerVisitorId()
     };
 
-    console.log("Registrando campaña:", visita);
+    console.log(
+        "Registrando campaña:",
+        visita
+    );
 
     const { error } = await supabaseClient
         .from("visitas")
         .insert([visita]);
 
     if (error) {
-        console.error("Error al registrar campaña:", error);
+        console.error(
+            "Error al registrar campaña:",
+            error
+        );
         return false;
     }
 
-    console.log("Campaña registrada correctamente");
+    console.log(
+        "Campaña registrada correctamente"
+    );
+
     return true;
 }
