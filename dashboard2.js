@@ -355,6 +355,57 @@ function categoriasDelPeriodoSeleccionado() {
   return categorias;
 }
 
+function instalacionesDelPeriodoSeleccionado() {
+  const instalaciones = OmegaHub.instalaciones || [];
+  const hoy = fechaISOEnPeru();
+  const periodo = OmegaHub.periodoActivo;
+
+  if (periodo === "hoy") {
+    return instalaciones.filter(
+      item => fechaISOEnPeru(item.created_at) === hoy
+    );
+  }
+
+  if (periodo === "mes") {
+    const mesActual = hoy.slice(0, 7);
+
+    return instalaciones.filter(
+      item =>
+        fechaISOEnPeru(item.created_at).slice(0, 7) === mesActual
+    );
+  }
+
+  if (periodo === "anio") {
+    const anioActual = hoy.slice(0, 4);
+
+    return instalaciones.filter(
+      item =>
+        fechaISOEnPeru(item.created_at).slice(0, 4) === anioActual
+    );
+  }
+
+  if (periodo === "semana") {
+    const fechaHoy = new Date(`${hoy}T12:00:00-05:00`);
+    const diaSemana = fechaHoy.getDay();
+    const retroceso = diaSemana === 0 ? 6 : diaSemana - 1;
+
+    fechaHoy.setDate(fechaHoy.getDate() - retroceso);
+
+    const inicioSemana = fechaISOEnPeru(fechaHoy);
+
+    return instalaciones.filter(item => {
+      const fechaInstalacion = fechaISOEnPeru(item.created_at);
+
+      return (
+        fechaInstalacion >= inicioSemana &&
+        fechaInstalacion <= hoy
+      );
+    });
+  }
+
+  return instalaciones;
+}
+
 function nombrePeriodoSeleccionado() {
   const nombres = {
     hoy: "Hoy",
@@ -674,6 +725,33 @@ if (categoriasError) {
   );
 }
 
+// ============================================================
+// APP INSTALADA SHOPPER
+// ============================================================
+
+const {
+  data: instalacionesData,
+  error: instalacionesError
+} = await supabaseClient
+  .from("shop_instalaciones")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+if (instalacionesError) {
+  console.error(
+    "Error cargando instalaciones de Shopper:",
+    instalacionesError
+  );
+
+  OmegaHub.instalaciones = [];
+} else {
+  OmegaHub.instalaciones = instalacionesData || [];
+
+  console.log(
+    `Picapiedra cargó ${OmegaHub.instalaciones.length} instalaciones`
+  );
+}
+
   setEstado("OmegaHub conectado", "ok");
   renderTodo();
 }
@@ -686,6 +764,7 @@ function renderTodo() {
   renderSelectorClientes();
   renderHeaderCliente();
   renderKPIs();
+  renderInstalaciones();
   renderCategorias();
   renderDispositivos();
   renderGraficoDias();
@@ -827,6 +906,27 @@ function renderHeaderCliente() {
     .replace(/\b\w/g, letra => letra.toUpperCase());
 
   setText("nombreClienteHeader", nombre);
+}
+
+function renderInstalaciones() {
+  const instalaciones = instalacionesDelPeriodoSeleccionado();
+
+  setText("totalInstalaciones", numero(instalaciones.length));
+
+  const detallePorPeriodo = {
+    hoy: "Instaladas hoy",
+    semana: "Instaladas esta semana",
+    mes: "Instaladas este mes",
+    anio: "Instaladas este año"
+  };
+
+  setText(
+    "detalleInstalaciones",
+    instalaciones.length > 0
+      ? detallePorPeriodo[OmegaHub.periodoActivo] ||
+          "Instalaciones registradas"
+      : "Sin instalaciones registradas"
+  );
 }
 
 function renderCategorias() {
@@ -1955,6 +2055,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   OmegaHub.periodoActivo = selectorPeriodo.value;
 
   renderKPIs();
+  renderInstalaciones();
+  renderCategorias();
   renderDispositivos();
   renderGraficoDias();
   renderCanales();
