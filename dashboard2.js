@@ -76,7 +76,11 @@ const LINEAS_COMERCIALES = {
 
   shopper_meta_campania_1: "Campaña 1",
   shopper_meta_campania_2: "Campaña 2",
-  shopper_meta_campania_3: "Campaña 3"
+  shopper_meta_campania_3: "Campaña 3",
+
+  shopper_factor_temu_v1_nov26: "Video 1",
+  shopper_factor_temu_v2_nov26: "Video 2",
+  shopper_factor_temu_v3_nov26: "Video 3"
 };
 
 const REDES_SOCIALES = [
