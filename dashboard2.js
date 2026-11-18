@@ -71,17 +71,19 @@ const CANALES = {
   directo: { nombre: "Directo", color: "#64748B" }
 };
 
+
 const LINEAS_COMERCIALES = {
   kuya_tiktok_whatsapp_sep26: "TikTok → WhatsApp",
 
-  shopper_meta_campania_1: "Campaña 1",
-  shopper_meta_campania_2: "Campaña 2",
-  shopper_meta_campania_3: "Campaña 3",
+  shopper_meta_campania_1: "Campaña anterior 1",
+  shopper_meta_campania_2: "Campaña anterior 2",
+  shopper_meta_campania_3: "Campaña anterior 3",
 
   shopper_factor_temu_v1_nov26: "Video 1",
   shopper_factor_temu_v2_nov26: "Video 2",
   shopper_factor_temu_v3_nov26: "Video 3"
 };
+
 
 const REDES_SOCIALES = [
   "facebook",
@@ -1117,12 +1119,13 @@ function renderLeyendaGrafico() {
     visita => obtenerLineaComercial(visita)
   );
 
-  const ordenGeneralCampanias =
-    Object.entries(totalesGenerales)
-      .filter(([, total]) => total > 0)
-      .sort((a, b) => b[1] - a[1])
-      .map(([campania]) => campania)
-      .slice(0, 4);
+  
+const ordenGeneralCampanias = [
+  "Video 1",
+  "Video 2",
+  "Video 3"
+];
+
 
   /*
    * Totales correspondientes al período visible.
@@ -1483,12 +1486,13 @@ function renderGraficoDias() {
     visita => obtenerLineaComercial(visita)
   );
 
-  const ordenGeneralCampanias =
-    Object.entries(totalesGenerales)
-      .filter(([, total]) => total > 0)
-      .sort((a, b) => b[1] - a[1])
-      .map(([campania]) => campania)
-      .slice(0, 4);
+  
+const ordenGeneralCampanias = [
+  "Video 1",
+  "Video 2",
+  "Video 3"
+];
+
 
   /*
    * Campañas con actividad dentro del período.
