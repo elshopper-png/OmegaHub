@@ -1012,10 +1012,12 @@ const lider = Object.entries(porLinea)
 
   setText("totalVisitas", numero(visitas.length));
   setText("visitasHoy", numero(visitasHoy));
-  setText(
+  
+setText(
   "canalLider",
-  lider ? lider[0] : "Sin datos"
+  lider ? "Factor Temu" : "Sin datos"
 );
+
 
   setText(
   "detalleCanalLider",
